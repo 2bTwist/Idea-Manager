@@ -55,7 +55,7 @@ app/
 - Add user authentication and authorization
 - Build a frontend for idea management
 - Implement idea ranking and analytics
-- Deploy to cloud platforms
+- Deploy to cloud platforms 
 
 ---
 This project is a personal learning exercise. Contributions and suggestions are welcome!
