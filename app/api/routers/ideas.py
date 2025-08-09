@@ -1,7 +1,42 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.deps import get_db
+from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate
+from app.services.ideas import create, get, list_, update_, delete_
 
 router = APIRouter()
 
-@router.get("/ideas", summary="List all ideas")
-async def list_ideas():
-    return {"items": [], "total": 0}
+@router.post("/", response_model=IdeaOut, status_code=status.HTTP_201_CREATED)
+async def create_idea(payload: IdeaCreate, db: AsyncSession = Depends(get_db)):
+    data = payload.model_dump()
+    if not data["uses_ai"]:
+        data["ai_complexity"] = 0
+    return await create(db, data)
+
+@router.get("/", response_model=list[IdeaOut])
+async def list_ideas(limit: int = 20, offset: int = 0, db: AsyncSession = Depends(get_db)):
+    return await list_(db, limit=limit, offset=offset)
+
+@router.get("/{idea_id}", response_model=IdeaOut)
+async def get_idea(idea_id: str, db: AsyncSession = Depends(get_db)):
+    obj = await get(db, idea_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return obj
+
+@router.patch("/{idea_id}", response_model=IdeaOut)
+async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depends(get_db)):
+    data = payload.model_dump(exclude_unset=True)
+    if "uses_ai" in data and data.get("uses_ai") is False:
+        data["ai_complexity"] = 0
+    obj = await update_(db, idea_id, data)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return obj
+
+@router.delete("/{idea_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_idea(idea_id: str, db: AsyncSession = Depends(get_db)):
+    ok = await delete_(db, idea_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return None
