@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
-from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate
+from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate, MessageResponse
 from app.services.ideas import create, get, list_, update_, delete_
 
 router = APIRouter()
@@ -34,9 +34,9 @@ async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depe
         raise HTTPException(status_code=404, detail="Idea not found")
     return obj
 
-@router.delete("/{idea_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{idea_id}", response_model=MessageResponse, status_code=status.HTTP_200_OK)
 async def delete_idea(idea_id: str, db: AsyncSession = Depends(get_db)):
     ok = await delete_(db, idea_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Idea not found")
-    return None
+    return {"message": f"Idea {idea_id} deleted"}

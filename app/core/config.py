@@ -4,6 +4,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     APP_ENV: str
 
+    SCORE_W_SCALABILITY: float = 0.35
+    SCORE_W_EASE: float = 0.25
+    SCORE_W_AI_FLAG: float = 0.10
+    SCORE_W_AI_COMPLEX: float = 0.30
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
