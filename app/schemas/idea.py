@@ -29,6 +29,7 @@ class IdeaOut(BaseModel):
     ease_to_build: int
     uses_ai: bool
     ai_complexity: int
+    score: float
     created_at: datetime
     updated_at: datetime
 

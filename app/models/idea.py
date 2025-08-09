@@ -1,9 +1,21 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
 import uuid
 
 from app.db.base import Base
+from app.core.config import settings
+
+
+def _norm15(col):  # maps 1..5 -> 0..1
+    return (sa.cast(col, sa.Float) - 1.0) / 4.0
+
+def _norm05(col):  # maps 0..5 -> 0..1
+    return sa.cast(col, sa.Float) / 5.0
+
+def _ai_flag(col):
+    return sa.case((col.is_(True), 1.0), else_=0.0)
 
 class Idea(Base):
     __tablename__ = "ideas"
@@ -19,3 +31,28 @@ class Idea(Base):
 
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # ---------------- score (computed) ----------------
+    @hybrid_property
+    def score(self) -> float:
+        w = settings
+        def norm15(v): return (v - 1.0) / 4.0
+        def norm05(v): return v / 5.0
+        base = (
+            w.SCORE_W_SCALABILITY * norm15(self.scalability)
+            + w.SCORE_W_EASE * norm15(self.ease_to_build)
+            + w.SCORE_W_AI_FLAG * (1.0 if self.uses_ai else 0.0)
+            + w.SCORE_W_AI_COMPLEX * norm05(self.ai_complexity)
+        )
+        return base * 5.0  # final score 0..5
+
+    @score.expression
+    def score(cls):
+        w = settings
+        base = (
+            w.SCORE_W_SCALABILITY * _norm15(cls.scalability)
+            + w.SCORE_W_EASE * _norm15(cls.ease_to_build)
+            + w.SCORE_W_AI_FLAG * _ai_flag(cls.uses_ai)
+            + w.SCORE_W_AI_COMPLEX * _norm05(cls.ai_complexity)
+        )
+        return base * 5.0
