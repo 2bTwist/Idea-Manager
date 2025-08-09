@@ -21,9 +21,16 @@ class IdeaUpdate(BaseModel):
     uses_ai: bool | None = None
     ai_complexity: int | None = Field(default=None, ge=0, le=5)
 
-class IdeaOut(IdeaBase):
+class IdeaOut(BaseModel):
     id: UUID
+    title: str
+    description: str
+    scalability: int
+    ease_to_build: int
+    uses_ai: bool
+    ai_complexity: int
     created_at: datetime
     updated_at: datetime
+
     class Config:
         from_attributes = True
