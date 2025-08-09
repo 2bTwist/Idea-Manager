@@ -38,3 +38,9 @@ class IdeaOut(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+class IdeasPage(BaseModel):
+    items: list[IdeaOut]
+    total: int
+    limit: int
+    offset: int
