@@ -1,4 +1,6 @@
 from pydantic import BaseModel, Field
+from uuid import UUID
+from datetime import datetime
 
 class IdeaBase(BaseModel):
     title: str = Field(min_length=1, max_length=200)
@@ -20,6 +22,8 @@ class IdeaUpdate(BaseModel):
     ai_complexity: int | None = Field(default=None, ge=0, le=5)
 
 class IdeaOut(IdeaBase):
-    id: str
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
     class Config:
         from_attributes = True
