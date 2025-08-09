@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Idea Manager", version="1.0.0")
+    app = FastAPI(title="Idea Manager", version="0.1.0")
 
     # Routers (we’ll add ideas soon)
     from app.api.routers.ideas import router as ideas_router
