@@ -1,11 +1,20 @@
 from datetime import datetime, timezone
 import socket
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from app.core.logging import configure_logging
 from app.api.middleware import RequestIDMiddleware, AccessLogMiddleware
-from app.api.errors import unhandled_exception_handler
 
 start_time = datetime.now(timezone.utc)
+
+def unhandled_exception_handler(request: Request, exc: Exception):
+    logger = logging.getLogger("app")
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
 
 def create_app() -> FastAPI:
     configure_logging()  # Set up logging early

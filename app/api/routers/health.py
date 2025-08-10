@@ -20,7 +20,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         db_status = True
     except Exception as e:
         db_status = False
-        logger.error(f"Database health check failed: {e}")
+        logger.error(f"Database health check failed: {e}", exc_info=True)
 
     return {
         "status": "ok",
