@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse
 from app.core.logging import configure_logging
 from app.api.middleware import RequestIDMiddleware, AccessLogMiddleware
 
+from app import __version__ as API_VERSION
+
 start_time = datetime.now(timezone.utc)
 
 def unhandled_exception_handler(request: Request, exc: Exception):
@@ -34,7 +36,7 @@ def create_app() -> FastAPI:
         uptime_seconds = (datetime.now(timezone.utc) - start_time).total_seconds()
         return {
             "name": "Idea Manager API",
-            "version": "1.0.0",
+            "version": API_VERSION,
             "description": "Manage and rank innovative ideas.",
             "docs_url": "/docs",
             "uptime_seconds": uptime_seconds,

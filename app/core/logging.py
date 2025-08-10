@@ -127,18 +127,22 @@ def configure_logging() -> None:
     - app.request uses AccessFormatter
     - uvicorn.access is silenced (we have our own)
     """
-    use_color = sys.stdout.isatty()
-
+    # Force custom formatters in Docker (check for container environment)
+    use_color = sys.stdout.isatty() or os.getenv("FORCE_COLOR_LOGS", "false").lower() == "true"
+    
+    # In Docker, always use custom formatters but without colors
+    in_docker = os.getenv("PYTHONUNBUFFERED") == "1" and not sys.stdout.isatty()
+    
     handlers = {
         "stdout_default": {
-            "class": "logging.StreamHandler",
+            "class": "logging.StreamHandler", 
             "stream": "ext://sys.stdout",
-            "formatter": "nice" if use_color else "plain",
+            "formatter": "nice_plain" if in_docker else ("nice" if use_color else "plain"),
         },
         "stdout_access": {
             "class": "logging.StreamHandler",
-            "stream": "ext://sys.stdout",
-            "formatter": "access" if use_color else "plain",
+            "stream": "ext://sys.stdout", 
+            "formatter": "access_plain" if in_docker else ("access" if use_color else "plain"),
         },
     }
 
@@ -149,6 +153,14 @@ def configure_logging() -> None:
         },
         "access": {
             "()": AccessFormatter,
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "nice_plain": {
+            "()": "app.core.logging.PlainNiceFormatter",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "access_plain": {
+            "()": "app.core.logging.PlainAccessFormatter", 
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
         "plain": {
@@ -179,3 +191,59 @@ def configure_logging() -> None:
             "sqlalchemy.engine": {"level": "WARNING", "handlers": ["stdout_default"], "propagate": False},
         },
     })
+
+
+class PlainNiceFormatter(logging.Formatter):
+    """Plain version of NiceFormatter without colors for Docker"""
+    def format(self, record: logging.LogRecord) -> str:
+        if not hasattr(record, "asctime"):
+            record.asctime = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
+
+        parts = [
+            record.asctime,
+            f"{record.levelname:<8}",
+            record.name,
+            record.getMessage(),
+        ]
+        formatted = " | ".join(parts)
+        
+        if record.exc_info:
+            formatted += "\n" + self.formatException(record.exc_info)
+        elif record.exc_text:
+            formatted += "\n" + record.exc_text
+            
+        return formatted
+
+
+class PlainAccessFormatter(logging.Formatter):
+    """Plain version of AccessFormatter without colors for Docker"""
+    def format(self, record: logging.LogRecord) -> str:
+        if not hasattr(record, "asctime"):
+            record.asctime = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
+
+        method = getattr(record, "method", None)
+        path = getattr(record, "path", None)
+        status_code = getattr(record, "status_code", None)
+        duration_ms = getattr(record, "duration_ms", None)
+        client = getattr(record, "client", None)
+        rid = getattr(record, "request_id", "-")
+
+        if all(v is not None for v in (method, path, status_code, duration_ms, client)):
+            msg = f"rid={rid} method={method} path={path} status={status_code} duration_ms={duration_ms} client={client}"
+        else:
+            msg = record.getMessage()
+
+        parts = [
+            record.asctime,
+            f"{record.levelname:<8}",
+            record.name,
+            msg,
+        ]
+        formatted = " | ".join(parts)
+        
+        if record.exc_info:
+            formatted += "\n" + self.formatException(record.exc_info)
+        elif record.exc_text:
+            formatted += "\n" + record.exc_text
+            
+        return formatted
