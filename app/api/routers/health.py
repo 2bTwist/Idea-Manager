@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from datetime import datetime, timezone
+from sqlalchemy import text
 import socket
 
 router = APIRouter()
@@ -13,7 +14,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     """
     try:
         # Quick DB check
-        await db.execute("SELECT 1")
+        await db.execute(text("SELECT 1"))
         db_status = True
     except Exception:
         db_status = False
