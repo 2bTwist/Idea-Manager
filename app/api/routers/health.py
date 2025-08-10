@@ -6,7 +6,7 @@ import socket
 
 router = APIRouter()
 
-@router.get("/", summary="Health check", tags=["System"])
+@router.get("/", summary="Health check")
 async def health_check(db: AsyncSession = Depends(get_db)):
     """
     Returns API health status.

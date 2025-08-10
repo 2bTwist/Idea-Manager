@@ -7,7 +7,8 @@ start_time = datetime.now(timezone.utc)
 def create_app() -> FastAPI:
     app = FastAPI(title="Idea Manager", version="0.1.0")
 
-    @app.get("/", summary="API Info", tags=["System"])
+    # API Info
+    @app.get("/", summary="API Info", tags=["health"])
     async def root():
         uptime_seconds = (datetime.now(timezone.utc) - start_time).total_seconds()
         return {
@@ -19,12 +20,12 @@ def create_app() -> FastAPI:
             "host": socket.gethostname()
         }
 
-    # Routers (we’ll add ideas soon)
-    from app.api.routers.ideas import router as ideas_router
-    app.include_router(ideas_router, prefix="/ideas", tags=["ideas"])
-
+    # Routers
     from app.api.routers.health import router as health_router
     app.include_router(health_router, prefix="/health", tags=["health"])
+
+    from app.api.routers.ideas import router as ideas_router
+    app.include_router(ideas_router, prefix="/ideas", tags=["ideas"])
 
     return app
 
