@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate, MessageResponse, IdeasPage
@@ -24,14 +24,14 @@ async def create_idea(payload: IdeaCreate, db: AsyncSession = Depends(get_db)):
 
 @router.get("/", response_model=IdeasPage)
 async def list_ideas(
-    limit: int = 20,
-    offset: int = 0,
-    sort: IdeaSort = IdeaSort.created_at,       # "created_at" | "score"
-    order: IdeaOrder = IdeaOrder.desc,            # "asc" | "desc"
-    q: str | None = None,           # search in title/description
-    uses_ai: bool | None = None,    # true/false
-    min_score: float | None = None, # 0..5
-    max_score: float | None = None, # 0..5
+    limit: int = Query(20, ge=1, le=100, description="Max items to return"),
+    offset: int = Query(0, ge=0, description="Items to skip"),
+    sort: IdeaSort = Query(IdeaSort.created_at, description="Sort field"),
+    order: IdeaOrder = Query(IdeaOrder.desc, description="Sort direction"),
+    q: str | None = Query(None, description="Search in title/description"),
+    uses_ai: bool | None = Query(None, description="Filter by AI usage"),
+    min_score: float | None = Query(None, ge=0, le=5, description="Min score (0..5)"),
+    max_score: float | None = Query(None, ge=0, le=5, description="Max score (0..5)"),
     db: AsyncSession = Depends(get_db),
 ):
     items, total = await list_(
