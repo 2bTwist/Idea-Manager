@@ -34,6 +34,9 @@ async def list_ideas(
     max_score: float | None = Query(None, ge=0, le=5, description="Max score (0..5)"),
     db: AsyncSession = Depends(get_db),
 ):
+    if (min_score is not None and max_score is not None) and (min_score > max_score):
+        raise HTTPException(status_code=400, detail="min_score cannot be greater than max_score")
+    
     items, total = await list_(
         db, limit=limit, offset=offset, sort=sort, order=order,
         q=q, uses_ai=uses_ai, min_score=min_score, max_score=max_score,

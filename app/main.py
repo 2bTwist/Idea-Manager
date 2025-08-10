@@ -3,10 +3,12 @@ import socket
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from app.core.logging import configure_logging
 from app.api.middleware import RequestIDMiddleware, AccessLogMiddleware
 
 from app import __version__ as API_VERSION
+from app.core.config import settings
 
 start_time = datetime.now(timezone.utc)
 
@@ -21,7 +23,20 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 def create_app() -> FastAPI:
     configure_logging()  # Set up logging early
 
-    app = FastAPI(title="Idea Manager", version="0.1.0")
+    app = FastAPI(title="Idea Manager", version=API_VERSION)
+
+        # Parse origins (handles comma-separated string or list)
+    origins = settings.BACKEND_CORS_ORIGINS
+    if isinstance(origins, str):
+        origins = [o.strip() for o in origins.split(",") if o.strip()]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins or ["*"] if settings.APP_ENV == "dev" else origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # Add middleware
     app.add_middleware(RequestIDMiddleware)
