@@ -1,25 +1,35 @@
 from datetime import datetime, timezone
 import socket
 from fastapi import FastAPI
-
-from app import __version__ as APP_VERSION
+from app.core.logging import configure_logging
+from app.api.middleware import RequestIDMiddleware, AccessLogMiddleware
+from app.api.errors import unhandled_exception_handler
 
 start_time = datetime.now(timezone.utc)
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Idea Manager", version=APP_VERSION)
+    configure_logging()  # Set up logging early
 
-    # API Info
+    app = FastAPI(title="Idea Manager", version="0.1.0")
+
+    # Add middleware
+    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(AccessLogMiddleware)
+
+    # Handle unexpected errors
+    app.add_exception_handler(Exception, unhandled_exception_handler)
+
+    # Root info endpoint
     @app.get("/", summary="API Info", tags=["health"])
     async def root():
         uptime_seconds = (datetime.now(timezone.utc) - start_time).total_seconds()
         return {
             "name": "Idea Manager API",
-            "version": APP_VERSION,
+            "version": "1.0.0",
             "description": "Manage and rank innovative ideas.",
             "docs_url": "/docs",
             "uptime_seconds": uptime_seconds,
-            "host": socket.gethostname()
+            "host": socket.gethostname(),
         }
 
     # Routers

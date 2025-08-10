@@ -4,7 +4,9 @@ from app.api.deps import get_db
 from datetime import datetime, timezone
 from sqlalchemy import text
 import socket
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/", summary="Health check")
@@ -16,8 +18,9 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         # Quick DB check
         await db.execute(text("SELECT 1"))
         db_status = True
-    except Exception:
+    except Exception as e:
         db_status = False
+        logger.error(f"Database health check failed: {e}")
 
     return {
         "status": "ok",
