@@ -24,6 +24,15 @@ def create_app() -> FastAPI:
     configure_logging()  # Set up logging early
 
     app = FastAPI(title="Idea Manager", version=API_VERSION)
+    
+    # Add startup event to log accessible URLs
+    @app.on_event("startup")
+    async def startup_event():
+        logger = logging.getLogger("app")
+        logger.info("🚀 Idea Manager API is starting up!")
+        logger.info("📋 API Documentation: http://localhost:8000/docs")
+        logger.info("🔧 Interactive API: http://localhost:8000/redoc")
+        logger.info("💡 Main API: http://localhost:8000")
 
     # Get CORS origins from settings
     origins = settings.cors_origins

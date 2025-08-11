@@ -9,6 +9,8 @@ alembic upgrade head
 
 # Start the application
 echo "Starting FastAPI application..."
+echo "Application will be available at: http://localhost:8000"
+echo "API documentation available at: http://localhost:8000/docs"
 if [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "dev" ]; then
     # Development mode with reload
     exec uvicorn app.main:app \
