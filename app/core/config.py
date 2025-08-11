@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
+from pydantic import computed_field
 
 class Settings(BaseSettings):
     DATABASE_URL: str
@@ -11,8 +12,16 @@ class Settings(BaseSettings):
     SCORE_W_AI_FLAG: float = 0.10
     SCORE_W_AI_COMPLEX: float = 0.30
 
-    # CORS
-    BACKEND_CORS_ORIGINS: List[str] = []
+    # CORS - Store as string and convert to list
+    BACKEND_CORS_ORIGINS: str = ""
+
+    @computed_field
+    @property
+    def cors_origins(self) -> List[str]:
+        """Convert comma-separated CORS origins to list"""
+        if not self.BACKEND_CORS_ORIGINS:
+            return []
+        return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(',') if origin.strip()]
 
     model_config = SettingsConfigDict(
         env_file=".env",

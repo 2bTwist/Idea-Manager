@@ -25,10 +25,8 @@ def create_app() -> FastAPI:
 
     app = FastAPI(title="Idea Manager", version=API_VERSION)
 
-        # Parse origins (handles comma-separated string or list)
-    origins = settings.BACKEND_CORS_ORIGINS
-    if isinstance(origins, str):
-        origins = [o.strip() for o in origins.split(",") if o.strip()]
+    # Get CORS origins from settings
+    origins = settings.cors_origins
 
     app.add_middleware(
         CORSMiddleware,
