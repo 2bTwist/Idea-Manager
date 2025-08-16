@@ -237,7 +237,7 @@ curl "http://localhost:8000/ideas/?sort=score&order=desc"
 ## 🔮 Future Enhancements
 
 ### Short Term
-- [ ] User authentication and authorization
+- [X] User authentication and authorization
 - [ ] Idea comments and voting system
 - [ ] Tags and categories
 - [ ] API rate limiting

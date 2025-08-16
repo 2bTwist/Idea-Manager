@@ -1,10 +1,13 @@
 import sqlalchemy as sa
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.idea import Idea    
+from app.models.idea import Idea
+from uuid import UUID    
 
-def _build_filters(q: str | None, uses_ai: bool | None, min_score: float | None, max_score: float | None):
+def _build_filters(q: str | None, uses_ai: bool | None, min_score: float | None, max_score: float | None, owner_id: UUID):
     filters = []
+    filters.append(Idea.owner_id == owner_id)
+
     if q:
         like = f"%{q}%"
         filters.append(sa.or_(Idea.title.ilike(like), Idea.description.ilike(like)))
@@ -16,15 +19,21 @@ def _build_filters(q: str | None, uses_ai: bool | None, min_score: float | None,
         filters.append(Idea.score <= max_score)
     return filters
 
-async def create(db: AsyncSession, data: dict) -> Idea:
+async def create(db: AsyncSession, data: dict, *, owner_id: UUID) -> Idea:
+    data = {**data, "owner_id": owner_id}
     obj = Idea(**data)
     db.add(obj)
     await db.commit()
     await db.refresh(obj)
     return obj
 
-async def get(db: AsyncSession, idea_id: str) -> Idea | None:
-    res = await db.execute(select(Idea).where(Idea.id == idea_id))
+async def get(db: AsyncSession, idea_id: str, *, owner_id: UUID) -> Idea | None:
+    try:
+        iid = UUID(idea_id)
+    except ValueError:
+        return None
+    res = await db.execute(select(Idea).where(Idea.id == iid, Idea.owner_id == owner_id))
+
     return res.scalar_one_or_none()
 
 async def list_(
@@ -37,8 +46,10 @@ async def list_(
     uses_ai: bool | None = None,
     min_score: float | None = None,
     max_score: float | None = None,
+    *,
+    owner_id: UUID
 ):
-    filters = _build_filters(q, uses_ai, min_score, max_score)
+    filters = _build_filters(q, uses_ai, min_score, max_score, owner_id)
 
     sort_map = {"created_at": Idea.created_at, "score": Idea.score}
     sort_col = sort_map.get(sort, Idea.created_at)
@@ -54,8 +65,13 @@ async def list_(
 
     return rows, total
 
-async def update_(db: AsyncSession, idea_id: str, data: dict) -> Idea | None:
-    res = await db.execute(select(Idea).where(Idea.id == idea_id))
+async def update_(db: AsyncSession, idea_id: str, data: dict, *, owner_id: UUID) -> Idea | None:
+    try:
+        iid = UUID(idea_id)
+    except ValueError:
+        return None
+    res = await db.execute(select(Idea).where(Idea.id == iid, Idea.owner_id == owner_id))
+
     obj = res.scalar_one_or_none()
     if not obj:
         return None
@@ -66,11 +82,16 @@ async def update_(db: AsyncSession, idea_id: str, data: dict) -> Idea | None:
     await db.refresh(obj)
     return obj
 
-async def delete_(db: AsyncSession, idea_id: str) -> bool:
-    res = await db.execute(select(Idea).where(Idea.id == idea_id))
+async def delete_(db: AsyncSession, idea_id: str, *, owner_id: UUID) -> bool:
+    try:
+        iid = UUID(idea_id)
+    except ValueError:
+        return False
+    res = await db.execute(select(Idea).where(Idea.id == iid, Idea.owner_id == owner_id))
+    
     obj = res.scalar_one_or_none()
     if not obj:
         return False
     await db.delete(obj)
     await db.commit()
-    return True
+    return True 

@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy import orm
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -31,6 +32,10 @@ class Idea(Base):
 
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    # ownership
+    owner_id = sa.Column(UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True, index=True)
+    owner = orm.relationship("User", backref="ideas")
 
     # ---------------- score (computed) ----------------
     @hybrid_property

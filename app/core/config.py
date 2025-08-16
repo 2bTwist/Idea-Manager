@@ -5,6 +5,9 @@ from pydantic import computed_field
 class Settings(BaseSettings):
     DATABASE_URL: str
     APP_ENV: str
+    SECRET_KEY: str
+    ACCESS_TOKEN_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # scoring weights
     SCORE_W_SCALABILITY: float = 0.35

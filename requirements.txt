@@ -1,4 +1,4 @@
-# Core FastAPI and web framework
+﻿# Core FastAPI and web framework
 fastapi==0.116.1
 uvicorn==0.35.0
 starlette==0.47.2
@@ -12,6 +12,15 @@ alembic==1.16.4
 pydantic==2.11.7
 pydantic-core==2.33.2
 pydantic-settings==2.10.1
+
+# Authentication and security
+passlib==1.7.4
+python-jose==3.5.0
+python-multipart==0.0.20
+email_validator==2.2.0
+bcrypt==4.3.0
+cryptography==45.0.6
+
 
 # Async and utility libraries
 anyio==4.10.0
@@ -47,3 +56,12 @@ typing-extensions==4.14.1
 
 # Type annotations
 annotated-types==0.7.0
+
+# Cryptographic dependencies
+cffi==1.17.1
+pycparser==2.22
+dnspython==2.7.0
+ecdsa==0.19.1
+pyasn1==0.6.1
+rsa==4.9.1
+six==1.17.0
