@@ -68,18 +68,6 @@ async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depe
         raise HTTPException(status_code=404, detail="Idea not found")
     return obj
 
-@router.patch("/{idea_id}", response_model=IdeaOut)
-async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    data = payload.model_dump(exclude_unset=True)
-    if "uses_ai" in data and data.get("uses_ai") is False:
-        data["ai_complexity"] = 0
-    obj = await update_(db, idea_id, data, owner_id=current_user.id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Idea not found")
-    if obj.owner_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Idea not found")
-    return obj
-
 @router.delete("/{idea_id}", response_model=MessageResponse, status_code=status.HTTP_200_OK)
 async def delete_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     ok = await delete_(db, idea_id, owner_id=current_user.id)
