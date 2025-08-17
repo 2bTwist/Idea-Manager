@@ -17,6 +17,14 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+class UserAdminOut(UserOut):
+    is_superuser: bool  # expose to admins
+
+class UserAdminUpdate(BaseModel):
+    full_name: str | None = None
+    is_active: bool | None = None
+    is_superuser: bool | None = None
+
 class UserPublic(BaseModel):
     id: UUID
     full_name: str | None = None

@@ -15,7 +15,7 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     user = await create_user(db, email=payload.email, password=payload.password, full_name=payload.full_name)
-    return user
+    return UserOut.model_validate(user)
 
 @router.post("/token", response_model=Token)
 async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
@@ -27,4 +27,4 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
 
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
-    return current_user
+    return UserOut.model_validate(current_user)
