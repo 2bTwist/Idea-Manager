@@ -1,6 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from app.models.idea import Idea
 from uuid import UUID    
 
@@ -24,7 +25,7 @@ async def create(db: AsyncSession, data: dict, *, owner_id: UUID) -> Idea:
     obj = Idea(**data)
     db.add(obj)
     await db.commit()
-    await db.refresh(obj)
+    await db.refresh(obj, attribute_names=["owner"])
     return obj
 
 async def get(db: AsyncSession, idea_id: str, *, owner_id: UUID) -> Idea | None:
@@ -32,7 +33,7 @@ async def get(db: AsyncSession, idea_id: str, *, owner_id: UUID) -> Idea | None:
         iid = UUID(idea_id)
     except ValueError:
         return None
-    res = await db.execute(select(Idea).where(Idea.id == iid, Idea.owner_id == owner_id))
+    res = await db.execute(select(Idea).options(selectinload(Idea.owner)).where(Idea.id == iid, Idea.owner_id == owner_id))
 
     return res.scalar_one_or_none()
 
@@ -56,7 +57,7 @@ async def list_(
     order_by = sort_col.desc() if order.lower() == "desc" else sort_col.asc()
 
     # rows
-    stmt = select(Idea).where(*filters).order_by(order_by).limit(limit).offset(offset)
+    stmt = select(Idea).options(selectinload(Idea.owner)).where(*filters).order_by(order_by).limit(limit).offset(offset)
     rows = (await db.execute(stmt)).scalars().all()
 
     # total (same filters, no limit/offset)
@@ -80,6 +81,7 @@ async def update_(db: AsyncSession, idea_id: str, data: dict, *, owner_id: UUID)
             setattr(obj, k, v)
     await db.commit()
     await db.refresh(obj)
+    await db.refresh(obj, attribute_names=["owner"]) 
     return obj
 
 async def delete_(db: AsyncSession, idea_id: str, *, owner_id: UUID) -> bool:

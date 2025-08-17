@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from uuid import UUID
 from datetime import datetime
+from app.schemas.user import UserPublic
 
 class IdeaBase(BaseModel):
     title: str = Field(min_length=1, max_length=200)
@@ -32,6 +33,7 @@ class IdeaOut(BaseModel):
     score: float
     created_at: datetime
     updated_at: datetime
+    owner: UserPublic | None = None
 
     class Config:
         from_attributes = True
