@@ -70,3 +70,28 @@ async def delete_user(db: AsyncSession, user_id: UUID) -> bool:
     await db.delete(user)
     await db.commit()
     return True
+
+async def set_user_password(db: AsyncSession, user: User, new_password: str) -> User:
+    user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+async def update_profile(db: AsyncSession, user: User, *, full_name: str | None = None) -> User:
+    if full_name is not None:
+        user.full_name = full_name
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+async def change_password(
+    db: AsyncSession, *, user_id: UUID, current_password: str, new_password: str
+) -> bool:
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        return False
+    if not verify_password(current_password, user.hashed_password):
+        return False
+    user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    return True

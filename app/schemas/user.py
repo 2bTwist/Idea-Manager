@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, StringConstraints
+from typing import Annotated
 from uuid import UUID
 from datetime import datetime
 
@@ -38,3 +39,16 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     sub: str | None = None
+
+class ProfileUpdate(BaseModel):
+    full_name: str | None = None
+
+Min8 = Annotated[str, StringConstraints(min_length=8, strip_whitespace=True)]
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    # Use Annotated + StringConstraints (Pydantic v2) instead of constr()
+    new_password: Min8  # basic strength rule
+
+class MessageResponse(BaseModel):
+    message: str

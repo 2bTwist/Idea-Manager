@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
-from app.schemas.user import UserCreate, UserOut, Token
-from app.services.users import get_by_email, create_user, authenticate
-from app.core.security import create_access_token
+from app.schemas.user import UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn, MessageResponse
+from app.services.users import get_by_email, create_user, authenticate, set_user_password, update_profile, change_password
+from app.core.security import create_access_token, verify_password
 from app.models.user import User
 
 router = APIRouter()
@@ -28,3 +28,31 @@ async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
     return UserOut.model_validate(current_user)
+
+@router.patch("/me", response_model=UserOut, summary="Update my profile")
+async def update_me(
+    payload: ProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Only allow safe profile fields (currently just full_name)
+    updated = await update_profile(db, current_user, full_name=payload.full_name)
+    return UserOut.model_validate(updated)
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+async def change_password_route(
+    payload: ChangePasswordIn,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    ok = await change_password(
+        db,
+        user_id=current_user.id,
+        current_password=payload.current_password,
+        new_password=payload.new_password,
+    )
+    if not ok:
+        # Intentionally vague to avoid leaking which check failed
+        raise HTTPException(status_code=400, detail="Invalid current password")
+    # Clients should discard the old token and log in again.
+    return {"message": "Password changed successfully. Please sign in again."}
