@@ -13,6 +13,7 @@ class UserOut(BaseModel):
     email: EmailStr
     full_name: str | None = None
     is_active: bool
+    is_verified: bool
     created_at: datetime
 
     class Config:
@@ -59,3 +60,9 @@ class ForgotPasswordIn(BaseModel):
 class ResetPasswordIn(BaseModel):
     token: str
     new_password: Min8  
+
+class RequestVerifyIn(BaseModel):
+    email: EmailStr
+
+class VerifyEmailOut(BaseModel):
+    message: str

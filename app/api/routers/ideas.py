@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, require_verified
 from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate, MessageResponse, IdeasPage
 from app.services.ideas import create, get, list_, update_, delete_
 from enum import Enum
@@ -35,7 +35,7 @@ async def list_ideas(
     min_score: float | None = Query(None, ge=0, le=5, description="Min score (0..5)"),
     max_score: float | None = Query(None, ge=0, le=5, description="Max score (0..5)"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user), 
+    current_user: User = Depends(require_verified),
 ):
     if (min_score is not None and max_score is not None) and (min_score > max_score):
         raise HTTPException(status_code=400, detail="min_score cannot be greater than max_score")

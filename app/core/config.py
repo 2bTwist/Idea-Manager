@@ -9,6 +9,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # Email settings
+    SENDGRID_API_KEY: str | None = None
+    MAIL_FROM: str | None = None
+    MAIL_FROM_NAME: str | None = "Idea Manager"
+    EXTERNAL_BASE_URL: str | None = "http://localhost:8000"
+    EMAIL_ENABLED: bool | None = False
+
     # scoring weights
     SCORE_W_SCALABILITY: float = 0.35
     SCORE_W_EASE: float = 0.25

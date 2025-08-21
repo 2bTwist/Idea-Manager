@@ -1,9 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
-from app.schemas.user import UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn, MessageResponse, ForgotPasswordIn, ResetPasswordIn
-from app.services.users import get_by_email, create_user, authenticate, set_user_password, update_profile, change_password, create_password_reset_token, reset_password_with_token
+from app.schemas.user import (
+    UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn, 
+    MessageResponse, ForgotPasswordIn, ResetPasswordIn, RequestVerifyIn, VerifyEmailOut)
+from app.services.users import (
+    get_by_email, create_user, authenticate, set_user_password, update_profile,
+    change_password, create_password_reset_token, reset_password_with_token,
+    issue_email_verification, verify_email_with_token)
 from app.core.security import create_access_token, verify_password
 from app.core.config import settings
 from app.models.user import User
@@ -16,7 +21,26 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     user = await create_user(db, email=payload.email, password=payload.password, full_name=payload.full_name)
+
+    # Fire off verification email (dev: still sent via logger if not configured)
+    await issue_email_verification(db, user)
     return UserOut.model_validate(user)
+
+
+@router.post("/request-verify", response_model=VerifyEmailOut)
+async def request_verify(payload: RequestVerifyIn, db: AsyncSession = Depends(get_db)):
+    # Always return 200 to avoid user enumeration
+    user = await get_by_email(db, payload.email)
+    if user and user.is_active and not user.is_verified:
+        await issue_email_verification(db, user)
+    return VerifyEmailOut(message="If the account exists and is not verified, a verification email has been sent.")
+
+@router.get("/verify-email", response_model=VerifyEmailOut)
+async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_db)):
+    ok = await verify_email_with_token(db, token)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+    return VerifyEmailOut(message="Email verified! You can close this tab and sign in.")
 
 @router.post("/token", response_model=Token)
 async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
