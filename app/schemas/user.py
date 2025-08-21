@@ -52,3 +52,10 @@ class ChangePasswordIn(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: Min8  

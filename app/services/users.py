@@ -1,5 +1,10 @@
+import hashlib, secrets
+from datetime import datetime, timedelta, timezone
+from app.models.password_reset import PasswordResetToken
+from app.core.config import settings
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func 
+from sqlalchemy import select, func, update
 import sqlalchemy as sa
 from app.models.user import User
 from app.core.security import get_password_hash, verify_password
@@ -93,5 +98,47 @@ async def change_password(
     if not verify_password(current_password, user.hashed_password):
         return False
     user.hashed_password = get_password_hash(new_password)
+    await db.commit()
+    return True
+
+def _hash_token(raw: str) -> str:
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+async def create_password_reset_token(db: AsyncSession, *, email: str, ttl_minutes: int = 30) -> str | None:
+    user = await get_by_email(db, email.lower().strip())
+    if not user or not user.is_active:
+        # Do NOT reveal whether the email exists.
+        return None
+
+    raw = secrets.token_urlsafe(48)  # send to user
+    hashed = _hash_token(raw)
+    expires = datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)
+
+    prt = PasswordResetToken(user_id=user.id, token_hash=hashed, expires_at=expires)
+    db.add(prt)
+    await db.commit()
+    return raw
+
+async def reset_password_with_token(db: AsyncSession, *, token: str, new_password: str) -> bool:
+    hashed = _hash_token(token)
+    now = datetime.now(timezone.utc)
+
+    res = await db.execute(
+        select(PasswordResetToken).where(
+            PasswordResetToken.token_hash == hashed,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > now,
+        )
+    )
+    prt = res.scalar_one_or_none()
+    if not prt:
+        return False
+
+    user = await get_user_by_id(db, prt.user_id)
+    if not user or not user.is_active:
+        return False
+
+    user.hashed_password = get_password_hash(new_password)
+    prt.used_at = now
     await db.commit()
     return True

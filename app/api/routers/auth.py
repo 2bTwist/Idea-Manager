@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
-from app.schemas.user import UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn, MessageResponse
-from app.services.users import get_by_email, create_user, authenticate, set_user_password, update_profile, change_password
+from app.schemas.user import UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn, MessageResponse, ForgotPasswordIn, ResetPasswordIn
+from app.services.users import get_by_email, create_user, authenticate, set_user_password, update_profile, change_password, create_password_reset_token, reset_password_with_token
 from app.core.security import create_access_token, verify_password
+from app.core.config import settings
 from app.models.user import User
 
 router = APIRouter()
@@ -56,3 +57,29 @@ async def change_password_route(
         raise HTTPException(status_code=400, detail="Invalid current password")
     # Clients should discard the old token and log in again.
     return {"message": "Password changed successfully. Please sign in again."}
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+async def forgot_password(
+    payload: ForgotPasswordIn,
+    db: AsyncSession = Depends(get_db),
+):
+    # Always return 200 to avoid user enumeration.
+    token = await create_password_reset_token(db, email=payload.email)
+    if settings.APP_ENV in ("dev", "development"):
+        # For local/dev: return the link so you can click it in Swagger.
+        return {
+            "message": "If that account exists, a reset link has been created.",
+            "dev_reset_link": f"/auth/reset-password?token={token}" if token else None,
+            "dev_token": token,  # helpful in local testing
+        }
+    return {"message": "If that account exists, a reset link has been sent."}
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+async def reset_password(
+    payload: ResetPasswordIn,
+    db: AsyncSession = Depends(get_db),
+):
+    ok = await reset_password_with_token(db, token=payload.token, new_password=payload.new_password)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    return {"message": "Password has been reset. Please sign in."}
