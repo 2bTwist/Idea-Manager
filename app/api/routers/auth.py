@@ -88,14 +88,9 @@ async def forgot_password(
     db: AsyncSession = Depends(get_db),
 ):
     # Always return 200 to avoid user enumeration.
-    token = await create_password_reset_token(db, email=payload.email)
-    if settings.APP_ENV in ("dev", "development"):
-        # For local/dev: return the link so you can click it in Swagger.
-        return {
-            "message": "If that account exists, a reset link has been created.",
-            "dev_reset_link": f"/auth/reset-password?token={token}" if token else None,
-            "dev_token": token,  # helpful in local testing
-        }
+    # In all environments, send the email (if email is configured and account exists).
+    from app.services.users import send_password_reset_email
+    await send_password_reset_email(db, email=payload.email)
     return {"message": "If that account exists, a reset link has been sent."}
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)

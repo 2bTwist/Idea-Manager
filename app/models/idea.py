@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.ext.hybrid import hybrid_property
 import uuid
-
+from sqlalchemy.dialects.postgresql import ARRAY
 from app.db.base import Base
 from app.core.config import settings
 
@@ -29,6 +29,7 @@ class Idea(Base):
     ease_to_build = sa.Column(sa.Integer, nullable=False, default=1) # 1-5 scale
     uses_ai = sa.Column(sa.Boolean, nullable=False, default=False)
     ai_complexity = sa.Column(sa.Integer, nullable=False, default=0)  # 0-5 scale
+    tags = sa.Column(ARRAY(sa.String(length=30)), nullable=False, server_default="{}")
 
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
@@ -61,3 +62,6 @@ class Idea(Base):
             + w.SCORE_W_AI_COMPLEX * _norm05(cls.ai_complexity)
         )
         return base * 5.0
+    
+# Fast overlap queries (tags && array)
+sa.Index("ix_ideas_tags_gin", Idea.tags, postgresql_using="gin")

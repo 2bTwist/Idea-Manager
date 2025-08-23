@@ -1,11 +1,13 @@
 import sqlalchemy as sa
+from typing import Sequence
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import selectinload
 from app.models.idea import Idea
 from uuid import UUID    
 
-def _build_filters(q: str | None, uses_ai: bool | None, min_score: float | None, max_score: float | None, owner_id: UUID):
+def _build_filters(q: str | None, uses_ai: bool | None, min_score: float | None, max_score: float | None, owner_id: UUID, tags_any: Sequence[str] | None):
     filters = []
     filters.append(Idea.owner_id == owner_id)
 
@@ -18,6 +20,8 @@ def _build_filters(q: str | None, uses_ai: bool | None, min_score: float | None,
         filters.append(Idea.score >= min_score)
     if max_score is not None:
         filters.append(Idea.score <= max_score)
+    if tags_any:  # NEW: overlap (ANY of these tags)
+        filters.append(Idea.tags.op("&&")(sa.cast(tags_any, ARRAY(sa.String()))))
     return filters
 
 async def create(db: AsyncSession, data: dict, *, owner_id: UUID) -> Idea:
@@ -48,9 +52,10 @@ async def list_(
     min_score: float | None = None,
     max_score: float | None = None,
     *,
-    owner_id: UUID
+    owner_id: UUID,
+    tags_any: Sequence[str] | None = None
 ):
-    filters = _build_filters(q, uses_ai, min_score, max_score, owner_id)
+    filters = _build_filters(q, uses_ai, min_score, max_score, owner_id, tags_any)
 
     sort_map = {"created_at": Idea.created_at, "score": Idea.score}
     sort_col = sort_map.get(sort, Idea.created_at)
@@ -97,3 +102,28 @@ async def delete_(db: AsyncSession, idea_id: str, *, owner_id: UUID) -> bool:
     await db.delete(obj)
     await db.commit()
     return True 
+
+# Convenience helpers (add/remove) – purely in DB
+async def add_tags(db: AsyncSession, idea_id: str, tags: Sequence[str], *, owner_id: UUID) -> Idea | None:
+    obj = await get(db, idea_id, owner_id=owner_id)
+    if not obj:
+        return None
+    current = set(obj.tags or [])
+    newset = sorted(current.union(tags))
+    obj.tags = newset
+    await db.commit()
+    await db.refresh(obj)
+    await db.refresh(obj, attribute_names=["owner"])
+    return obj
+
+async def remove_tags(db: AsyncSession, idea_id: str, tags: Sequence[str], *, owner_id: UUID) -> Idea | None:
+    obj = await get(db, idea_id, owner_id=owner_id)
+    if not obj:
+        return None
+    current = set(obj.tags or [])
+    newset = sorted(current.difference(tags))
+    obj.tags = newset
+    await db.commit()
+    await db.refresh(obj)
+    await db.refresh(obj, attribute_names=["owner"])
+    return obj

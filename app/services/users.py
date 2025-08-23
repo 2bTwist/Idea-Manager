@@ -195,3 +195,21 @@ async def verify_email_with_token(db: AsyncSession, token_raw: str) -> bool:
     evt.used_at = now
     await db.commit()
     return True
+
+async def send_password_reset_email(db: AsyncSession, *, email: str, ttl_minutes: int = 30) -> None:
+    """
+    Creates a reset token (if the account exists & active) and sends an email.
+    Always silent about existence to the caller.
+    """
+    token = await create_password_reset_token(db, email=email, ttl_minutes=ttl_minutes)
+    if not token:
+        return  # don't reveal anything
+
+    reset_link = _abs_link(f"/auth/reset-password?token={token}")
+    html = f"""
+    <p>Hello,</p>
+    <p>You requested a password reset for <b>Idea Manager</b>.</p>
+    <p><a href="{reset_link}">Reset my password</a></p>
+    <p>This link expires in {ttl_minutes} minutes. If you didn’t request this, you can ignore it.</p>
+    """
+    send_email(email, "Reset your password", html)

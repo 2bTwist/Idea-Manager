@@ -1,8 +1,9 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user, require_verified
-from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate, MessageResponse, IdeasPage
-from app.services.ideas import create, get, list_, update_, delete_
+from app.schemas.idea import IdeaCreate, IdeaOut, IdeaUpdate, MessageResponse, IdeasPage, ALLOWED_TAGS
+from app.services.ideas import create, get, list_, update_, delete_, add_tags, remove_tags
 from enum import Enum
 from app.models.user import User
 
@@ -34,6 +35,7 @@ async def list_ideas(
     uses_ai: bool | None = Query(None, description="Filter by AI usage"),
     min_score: float | None = Query(None, ge=0, le=5, description="Min score (0..5)"),
     max_score: float | None = Query(None, ge=0, le=5, description="Max score (0..5)"),
+    tags: List[str] | None = Query(None, description="Match ANY of these tag slugs"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_verified),
 ):
@@ -43,7 +45,7 @@ async def list_ideas(
     items, total = await list_(
         db, limit=limit, offset=offset, sort=sort, order=order,
         q=q, uses_ai=uses_ai, min_score=min_score, max_score=max_score,
-        owner_id=current_user.id,
+        owner_id=current_user.id, tags_any=tags,
     )
     return {"items": items, "total": total, "limit": limit, "offset": offset}
 
@@ -74,3 +76,40 @@ async def delete_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_
     if not ok:
         raise HTTPException(status_code=404, detail="Idea not found")
     return {"message": f"Idea {idea_id} deleted"}
+
+
+@router.get("/meta/tags", summary="List available tag slugs")
+async def list_available_tags():
+    return {"available": sorted(ALLOWED_TAGS)}
+
+# Add tags (idempotent union)
+@router.post("/{idea_id}/tags", response_model=IdeaOut, summary="Add tags to idea")
+async def add_tags_route(
+    idea_id: str,
+    payload: dict,  # {"tags": ["web","ai"]}
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tags = payload.get("tags") or []
+    # Basic validation using same allowed set
+    bad = [t for t in tags if t not in ALLOWED_TAGS]
+    if bad:
+        raise HTTPException(status_code=400, detail=f"Unknown tags: {bad}")
+    obj = await add_tags(db, idea_id, tags, owner_id=current_user.id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return obj
+
+# Remove tags (idempotent difference)
+@router.delete("/{idea_id}/tags", response_model=IdeaOut, summary="Remove tags from idea")
+async def remove_tags_route(
+    idea_id: str,
+    payload: dict,  # {"tags": ["ai"]}
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tags = payload.get("tags") or []
+    obj = await remove_tags(db, idea_id, tags, owner_id=current_user.id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    return obj
