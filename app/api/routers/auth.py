@@ -10,6 +10,7 @@ from app.services.users import (
     change_password, create_password_reset_token, reset_password_with_token,
     issue_email_verification, verify_email_with_token)
 from app.core.security import create_access_token, verify_password
+from app.core.tokens import hash_token
 from app.core.config import settings
 from app.models.user import User
 
@@ -35,12 +36,15 @@ async def request_verify(payload: RequestVerifyIn, db: AsyncSession = Depends(ge
         await issue_email_verification(db, user)
     return VerifyEmailOut(message="If the account exists and is not verified, a verification email has been sent.")
 
-@router.get("/verify-email", response_model=VerifyEmailOut)
-async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_db)):
+@router.post("/verify-email", response_model=VerifyEmailOut)
+async def verify_email_post(payload: dict, db: AsyncSession = Depends(get_db)):
+    token = payload.get("token")
+    if not token:
+        raise HTTPException(status_code=422, detail="token is required")
     ok = await verify_email_with_token(db, token)
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired verification link")
-    return VerifyEmailOut(message="Email verified! You can close this tab and sign in.")
+    return VerifyEmailOut(message="Email verified. You can sign in now.")
 
 @router.post("/token", response_model=Token)
 async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
@@ -87,11 +91,20 @@ async def forgot_password(
     payload: ForgotPasswordIn,
     db: AsyncSession = Depends(get_db),
 ):
-    # Always return 200 to avoid user enumeration.
-    # In all environments, send the email (if email is configured and account exists).
-    from app.services.users import send_password_reset_email
-    await send_password_reset_email(db, email=payload.email)
-    return {"message": "If that account exists, a reset link has been sent."}
+    # Always return 200 (no user enumeration)
+    if settings.EMAIL_ENABLED:
+        # send real email
+        from app.services.users import send_password_reset_email
+        await send_password_reset_email(db, email=payload.email)
+        return {"message": "If that account exists, a reset link has been sent."}
+    else:
+        # dev: create token but return it so you can test locally without email
+        token = await create_password_reset_token(db, email=payload.email)
+        return {
+            "message": "If that account exists, a reset link has been created.",
+            "dev_reset_link": f"/auth/reset-password?token={token}" if token else None,
+            "dev_token": token,
+        }
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 async def reset_password(
@@ -102,3 +115,32 @@ async def reset_password(
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     return {"message": "Password has been reset. Please sign in."}
+
+@router.get("/tokens/reset/validate")
+async def validate_reset_token(token: str, db: AsyncSession = Depends(get_db)):
+    # Reuse reset logic but don't consume the token:
+    from sqlalchemy import select
+    from app.models.password_reset import PasswordResetToken
+    from datetime import datetime, timezone
+    hashed = hash_token(token)
+    now = datetime.now(timezone.utc)
+    res = await db.execute(select(PasswordResetToken).where(
+        PasswordResetToken.token_hash == hashed,
+        PasswordResetToken.used_at.is_(None),
+        PasswordResetToken.expires_at > now,
+    ))
+    return {"valid": res.scalar_one_or_none() is not None}
+
+@router.get("/tokens/verify/validate")
+async def validate_verify_token(token: str, db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import select
+    from app.models.email_verification import EmailVerificationToken
+    from datetime import datetime, timezone
+    hashed = hash_token(token)
+    now = datetime.now(timezone.utc)
+    res = await db.execute(select(EmailVerificationToken).where(
+        EmailVerificationToken.token_hash == hashed,
+        EmailVerificationToken.used_at.is_(None),
+        EmailVerificationToken.expires_at > now,
+    ))
+    return {"valid": res.scalar_one_or_none() is not None}

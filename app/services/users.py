@@ -1,9 +1,10 @@
-import hashlib, secrets
+import secrets
 from datetime import datetime, timedelta, timezone
 from app.models.password_reset import PasswordResetToken
 from app.models.email_verification import EmailVerificationToken
 from app.services.email import send_email
 from app.core.config import settings
+from app.core.tokens import hash_token
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update
@@ -103,8 +104,7 @@ async def change_password(
     await db.commit()
     return True
 
-def _hash_token(raw: str) -> str:
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
 
 async def create_password_reset_token(db: AsyncSession, *, email: str, ttl_minutes: int = 30) -> str | None:
     user = await get_by_email(db, email.lower().strip())
@@ -113,7 +113,7 @@ async def create_password_reset_token(db: AsyncSession, *, email: str, ttl_minut
         return None
 
     raw = secrets.token_urlsafe(48)  # send to user
-    hashed = _hash_token(raw)
+    hashed = hash_token(raw)
     expires = datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)
 
     prt = PasswordResetToken(user_id=user.id, token_hash=hashed, expires_at=expires)
@@ -122,7 +122,7 @@ async def create_password_reset_token(db: AsyncSession, *, email: str, ttl_minut
     return raw
 
 async def reset_password_with_token(db: AsyncSession, *, token: str, new_password: str) -> bool:
-    hashed = _hash_token(token)
+    hashed = hash_token(token)
     now = datetime.now(timezone.utc)
 
     res = await db.execute(
@@ -145,24 +145,28 @@ async def reset_password_with_token(db: AsyncSession, *, token: str, new_passwor
     await db.commit()
     return True
 
-def _hash_token(raw: str) -> str:
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    
 
 def _abs_link(path_and_query: str) -> str:
     base = settings.EXTERNAL_BASE_URL.rstrip("/")
     suffix = path_and_query if path_and_query.startswith("/") else f"/{path_and_query}"
     return f"{base}{suffix}"
 
+def _abs_frontend_link(path_and_query: str) -> str:
+    base = (settings.FRONTEND_BASE_URL or "").rstrip("/")
+    suffix = path_and_query if path_and_query.startswith("/") else f"/{path_and_query}"
+    return f"{base}{suffix}"
+
 async def issue_email_verification(db: AsyncSession, user: User, ttl_minutes: int = 60) -> str:
     raw = secrets.token_urlsafe(48)
-    hashed = _hash_token(raw)
+    hashed = hash_token(raw)
     expires = datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)
 
     token = EmailVerificationToken(user_id=user.id, token_hash=hashed, expires_at=expires)
     db.add(token)
     await db.commit()
 
-    verify_link = _abs_link(f"/auth/verify-email?token={raw}")
+    verify_link = _abs_frontend_link(f"/auth/verify-email?token={raw}")
 
     html = f"""
     <p>Hello {user.full_name or user.email},</p>
@@ -174,7 +178,7 @@ async def issue_email_verification(db: AsyncSession, user: User, ttl_minutes: in
     return raw  # returned only for dev tests
 
 async def verify_email_with_token(db: AsyncSession, token_raw: str) -> bool:
-    hashed = _hash_token(token_raw)
+    hashed = hash_token(token_raw)
     now = datetime.now(timezone.utc)
     res = await db.execute(
         select(EmailVerificationToken).where(
@@ -205,7 +209,7 @@ async def send_password_reset_email(db: AsyncSession, *, email: str, ttl_minutes
     if not token:
         return  # don't reveal anything
 
-    reset_link = _abs_link(f"/auth/reset-password?token={token}")
+    reset_link = _abs_frontend_link(f"/auth/reset-password?token={token}")
     html = f"""
     <p>Hello,</p>
     <p>You requested a password reset for <b>Idea Manager</b>.</p>
