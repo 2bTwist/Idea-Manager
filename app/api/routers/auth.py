@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
 from app.schemas.user import (
-    UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn, 
-    MessageResponse, ForgotPasswordIn, ResetPasswordIn, RequestVerifyIn, VerifyEmailOut)
+    UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn,
+    MessageResponse, ForgotPasswordIn, ResetPasswordIn, RequestVerifyIn,
+    VerifyEmailOut, VerifyEmailDevOut)
 from app.services.users import (
     get_by_email, create_user, authenticate, set_user_password, update_profile,
     change_password, create_password_reset_token, reset_password_with_token,
@@ -17,23 +18,34 @@ from app.models.user import User
 router = APIRouter()
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(payload: UserCreate, response: Response, db: AsyncSession = Depends(get_db)):
     existing = await get_by_email(db, payload.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     user = await create_user(db, email=payload.email, password=payload.password, full_name=payload.full_name)
 
     # Fire off verification email (dev: still sent via logger if not configured)
-    await issue_email_verification(db, user)
+    raw = await issue_email_verification(db, user)
+    if not settings.EMAIL_ENABLED:
+       # Expose dev-only info via headers to keep body schema stable
+        response.headers["X-Dev-Verify-Link"] = f"/auth/verify-email?token={raw}"
+        response.headers["X-Dev-Verify-Token"] = raw
     return UserOut.model_validate(user)
 
 
-@router.post("/request-verify", response_model=VerifyEmailOut)
+@router.post("/request-verify", response_model=VerifyEmailOut | VerifyEmailDevOut)
 async def request_verify(payload: RequestVerifyIn, db: AsyncSession = Depends(get_db)):
     # Always return 200 to avoid user enumeration
     user = await get_by_email(db, payload.email)
     if user and user.is_active and not user.is_verified:
-        await issue_email_verification(db, user)
+        raw = await issue_email_verification(db, user)
+        # In dev, surface token to speed manual testing (mirrors forgot-password)
+        if not settings.EMAIL_ENABLED:
+            return VerifyEmailDevOut(
+                message="If the account exists and is not verified, a verification email has been created. (dev mode)",
+                dev_verify_link=f"/auth/verify-email?token={raw}",
+                dev_token=raw,
+            )
     return VerifyEmailOut(message="If the account exists and is not verified, a verification email has been sent.")
 
 @router.post("/verify-email", response_model=VerifyEmailOut)

@@ -18,7 +18,7 @@ class IdeaOrder(str, Enum):
 router = APIRouter()
 
 @router.post("/", response_model=IdeaOut, status_code=status.HTTP_201_CREATED)
-async def create_idea(payload: IdeaCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def create_idea(payload: IdeaCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_verified)):
     data = payload.model_dump()
     if not data["uses_ai"]:
         data["ai_complexity"] = 0
@@ -50,7 +50,7 @@ async def list_ideas(
     return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 @router.get("/{idea_id}", response_model=IdeaOut)
-async def get_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def get_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_verified)):
     obj = await get(db, idea_id, owner_id=current_user.id)
     if not obj:
         raise HTTPException(status_code=404, detail="Idea not found")
@@ -59,7 +59,7 @@ async def get_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_use
     return obj
 
 @router.patch("/{idea_id}", response_model=IdeaOut)
-async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_verified)):
     data = payload.model_dump(exclude_unset=True)
     if "uses_ai" in data and data.get("uses_ai") is False:
         data["ai_complexity"] = 0
@@ -71,7 +71,7 @@ async def update_idea(idea_id: str, payload: IdeaUpdate, db: AsyncSession = Depe
     return obj
 
 @router.delete("/{idea_id}", response_model=MessageResponse, status_code=status.HTTP_200_OK)
-async def delete_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def delete_idea(idea_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_verified)):
     ok = await delete_(db, idea_id, owner_id=current_user.id)
     if not ok:
         raise HTTPException(status_code=404, detail="Idea not found")
@@ -88,7 +88,7 @@ async def add_tags_route(
     idea_id: str,
     payload: dict,  # {"tags": ["web","ai"]}
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified),
 ):
     tags = payload.get("tags") or []
     # Basic validation using same allowed set
@@ -106,7 +106,7 @@ async def remove_tags_route(
     idea_id: str,
     payload: dict,  # {"tags": ["ai"]}
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_verified),
 ):
     tags = payload.get("tags") or []
     obj = await remove_tags(db, idea_id, tags, owner_id=current_user.id)

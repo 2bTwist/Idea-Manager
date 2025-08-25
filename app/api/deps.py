@@ -32,7 +32,7 @@ async def get_current_user(
         if sub is None:
             raise credentials_exc
         user_id = UUID(sub)  # <- parse once here
-    except JWTError:
+    except (JWTError, ValueError):
         raise credentials_exc
     res = await db.execute(select(User).where(User.id == user_id))
     user = res.scalar_one_or_none()

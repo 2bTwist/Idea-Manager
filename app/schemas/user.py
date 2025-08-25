@@ -66,3 +66,8 @@ class RequestVerifyIn(BaseModel):
 
 class VerifyEmailOut(BaseModel):
     message: str
+
+class VerifyEmailDevOut(VerifyEmailOut):
+    # extra fields only in dev responses
+    dev_verify_link: str | None = None
+    dev_token: str | None = None

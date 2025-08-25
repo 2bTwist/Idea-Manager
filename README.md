@@ -228,7 +228,7 @@ curl "http://localhost:8000/ideas/?sort=score&order=desc"
 
 ### Services
 - **app**: FastAPI application (port 8000)
-- **db**: PostgreSQL database (port 5433 → 5432)
+- **db**: PostgreSQL database (port 5432 → 5432)
 
 ### Volumes
 - `pgdata`: Persistent database storage
@@ -239,7 +239,7 @@ curl "http://localhost:8000/ideas/?sort=score&order=desc"
 ### Short Term
 - [X] User authentication and authorization
 - [ ] Idea comments and voting system
-- [ ] Tags and categories
+- [X] Tags and categories
 - [ ] API rate limiting
 
 ### Medium Term
