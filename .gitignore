@@ -47,4 +47,9 @@ htmlcov/
 .env
 .env.*
 !.env.example
+!.env.prod.sample
+cloudflared/
+*.pem
+*.key
+*.crt
 

@@ -1,3 +1,4 @@
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import socket
@@ -29,6 +30,11 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 def create_app() -> FastAPI:
     configure_logging()  # Set up logging early
 
+    # control docs per env
+    docs_url     = "/docs" if settings.ENABLE_DOCS else None
+    redoc_url    = "/redoc" if settings.ENABLE_DOCS else None
+    openapi_url  = "/openapi.json" if settings.ENABLE_DOCS else None
+
     # Use lifespan instead of deprecated on_event
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -39,7 +45,14 @@ def create_app() -> FastAPI:
         logger.info("💡 Main API: http://localhost:8000")
         yield
 
-    app = FastAPI(title="Idea Manager", version=API_VERSION, lifespan=lifespan)
+    app = FastAPI(
+        title="Idea Manager",
+        version=API_VERSION,
+        lifespan=lifespan,
+        docs_url=docs_url,
+        redoc_url=redoc_url,
+        openapi_url=openapi_url,
+    )
 
     # Rate limiting: limiter state + middleware + default handler
     app.state.limiter = limiter
@@ -57,6 +70,25 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Trusted Host (prevents DNS-rebinding)
+    hosts = (
+        ["*"] if settings.APP_ENV == "dev" and not settings.allowed_hosts_list
+        else (settings.allowed_hosts_list or ["api.eddyb.dev"])
+    )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=hosts)
+
+    # Minimal security headers in prod (safe behind Cloudflare)
+    if settings.APP_ENV != "dev":
+        @app.middleware("http")
+        async def _security_headers(request, call_next):
+            resp = await call_next(request)
+            resp.headers.setdefault("X-Frame-Options", "DENY")
+            resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+            resp.headers.setdefault("Referrer-Policy", "no-referrer")
+            # HSTS is fine through Cloudflare (clients see it)
+            resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+            return resp
 
     # Add middleware
     app.add_middleware(RequestIDMiddleware)

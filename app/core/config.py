@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     FRONTEND_BASE_URL: str | None = "http://localhost:5173"
     EMAIL_ENABLED: bool | None = False
 
+    ENABLE_DOCS: bool = True                # set False in .env.prod to hide /docs
+    ALLOWED_HOSTS: str = ""                 # comma list, e.g. "api.eddyb.dev"
+
     # scoring weights
     SCORE_W_SCALABILITY: float = 0.35
     SCORE_W_EASE: float = 0.25
@@ -33,6 +36,13 @@ class Settings(BaseSettings):
         if not self.BACKEND_CORS_ORIGINS:
             return []
         return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(',') if origin.strip()]
+    
+    @computed_field
+    @property
+    def allowed_hosts_list(self) -> List[str]:
+        if not self.ALLOWED_HOSTS:
+            return []
+        return [h.strip() for h in self.ALLOWED_HOSTS.split(",") if h.strip()]
 
     model_config = SettingsConfigDict(
         env_file=".env",
