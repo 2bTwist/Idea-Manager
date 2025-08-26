@@ -65,7 +65,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins or ["*"] if settings.APP_ENV == "dev" else origins,
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -117,7 +117,8 @@ def create_app() -> FastAPI:
             "name": "Idea Manager API",
             "version": API_VERSION,
             "description": "Manage and rank innovative ideas.",
-            "docs_url": "/docs",
+            "docs_url": "/docs" if settings.ENABLE_DOCS else None,
+            "redoc_url": "/redoc" if settings.ENABLE_DOCS else None,
             "uptime_seconds": uptime_seconds,
             "host": socket.gethostname(),
         }

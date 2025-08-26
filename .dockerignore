@@ -19,3 +19,6 @@ Dockerfile
 docker-compose.yml
 logs/
 *.log
+.env
+.env.prod
+.env.*
