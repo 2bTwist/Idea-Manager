@@ -68,3 +68,7 @@ six==1.17.0
 
 # Email sending
 sendgrid==6.12.4
+
+# Rate Limiting
+slowapi==0.1.9
+limits==5.5.0

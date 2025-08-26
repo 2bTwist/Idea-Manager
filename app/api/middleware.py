@@ -58,7 +58,9 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         finally:
             if response is not None:
                 duration_ms = int((time.perf_counter() - start) * 1000)
-                rid = request_id_ctx.get()
+                # Prefer request ID from response header (set by RequestIDMiddleware),
+                # fall back to context var which might be reset to '-' by then.
+                rid = response.headers.get("X-Request-ID") or request_id_ctx.get()
                 status_code = response.status_code
                 access_log.info(
                     "request",

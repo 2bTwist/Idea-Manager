@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request
+from app.core.rate_limit import limiter
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
@@ -59,7 +60,8 @@ async def verify_email_post(payload: dict, db: AsyncSession = Depends(get_db)):
     return VerifyEmailOut(message="Email verified. You can sign in now.")
 
 @router.post("/token", response_model=Token)
-async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")  # per-IP: 10 login attempts/min
+async def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     user = await authenticate(db, email=form.username, password=form.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
@@ -128,8 +130,10 @@ async def reset_password(
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     return {"message": "Password has been reset. Please sign in."}
 
+
 @router.get("/tokens/reset/validate")
-async def validate_reset_token(token: str, db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")  # per-IP: 30 token checks/min
+async def validate_reset_token(request: Request, token: str, db: AsyncSession = Depends(get_db)):
     # Reuse reset logic but don't consume the token:
     from sqlalchemy import select
     from app.models.password_reset import PasswordResetToken
@@ -144,7 +148,8 @@ async def validate_reset_token(token: str, db: AsyncSession = Depends(get_db)):
     return {"valid": res.scalar_one_or_none() is not None}
 
 @router.get("/tokens/verify/validate")
-async def validate_verify_token(token: str, db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")  # per-IP: 30 token checks/min
+async def validate_verify_token(request: Request, token: str, db: AsyncSession = Depends(get_db)):
     from sqlalchemy import select
     from app.models.email_verification import EmailVerificationToken
     from datetime import datetime, timezone
