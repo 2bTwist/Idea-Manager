@@ -45,4 +45,6 @@ htmlcov/
 
 # Ignore environment variables
 .env
+.env.*
+!.env.example
 

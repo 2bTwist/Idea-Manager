@@ -7,7 +7,8 @@ services:
       POSTGRES_PASSWORD: ideapass
       POSTGRES_DB: ideadb
     ports:
-      - "5432:5432"            
+      - "5432:5432"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ideauser -d ideadb || exit 1"]
       interval: 2s
@@ -25,6 +26,7 @@ services:
     env_file: .env
     ports:
       - "8000:8000"
+    restart: unless-stopped
     volumes:
       - ./:/app                 # hot reload
 

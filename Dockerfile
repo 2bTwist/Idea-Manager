@@ -27,13 +27,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 # Copy app with correct ownership in one go
 COPY --chown=appuser:appuser . .
-COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 USER appuser
 
 # Simple TCP healthcheck (works without curl/nc)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
   CMD python -c "import socket; socket.create_connection(('localhost', 8000), 5)" || exit 1
 
 EXPOSE 8000

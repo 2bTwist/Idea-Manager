@@ -47,7 +47,8 @@ def create_app() -> FastAPI:
     app.add_middleware(SlowAPIMiddleware)
 
     # Get CORS origins from settings
-    origins = settings.cors_origins
+    dev_origins = ["http://localhost:5173", "http://localhost:3000"]
+    origins = settings.cors_origins or (dev_origins if settings.APP_ENV == "dev" else [])
 
     app.add_middleware(
         CORSMiddleware,

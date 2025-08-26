@@ -29,7 +29,7 @@ class Idea(Base):
     ease_to_build = sa.Column(sa.Integer, nullable=False, default=1) # 1-5 scale
     uses_ai = sa.Column(sa.Boolean, nullable=False, default=False)
     ai_complexity = sa.Column(sa.Integer, nullable=False, default=0)  # 0-5 scale
-    tags = sa.Column(ARRAY(sa.String(length=30)), nullable=False, server_default="{}")
+    tags = sa.Column("tags", ARRAY(sa.String(30)), nullable=False, server_default=sa.text("'{}'::text[]"))
 
     created_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = sa.Column(sa.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

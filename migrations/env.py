@@ -4,8 +4,6 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from app.models.password_reset import PasswordResetToken 
-from app.models.email_verification import EmailVerificationToken
 
 
 from alembic import context
@@ -13,7 +11,10 @@ from alembic import context
 # our app imports
 from app.core.config import settings
 from app.db.base import Base
-from app.models.idea import Idea  # will exist soon
+from app.models.user import User
+from app.models.idea import Idea
+from app.models.password_reset import PasswordResetToken 
+from app.models.email_verification import EmailVerificationToken
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
