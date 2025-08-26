@@ -27,8 +27,11 @@ async def admin_update_user(
     user_id: UUID,
     payload: UserAdminUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin = Depends(require_superuser),
+    current_admin = Depends(require_superuser),
 ):
+    # Prevent an admin from demoting themselves
+    if user_id == current_admin.id and payload.is_superuser is False:
+        raise HTTPException(status_code=400, detail="Cannot remove your own superuser status")
     data = payload.model_dump(exclude_unset=True)
     updated = await update_user_admin(db, user_id, data)
     if not updated:
@@ -39,8 +42,11 @@ async def admin_update_user(
 async def admin_delete_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _admin = Depends(require_superuser),
+    current_admin = Depends(require_superuser),
 ):
+    # Prevent an admin from deleting themselves
+    if user_id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own user account")
     ok = await delete_user(db, user_id)
     if not ok:
         raise HTTPException(status_code=404, detail="User not found")

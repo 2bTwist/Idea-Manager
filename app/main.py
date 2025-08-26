@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 import socket
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.logging import configure_logging
 from app.api.middleware import RequestIDMiddleware, AccessLogMiddleware
@@ -23,16 +25,17 @@ def unhandled_exception_handler(request: Request, exc: Exception):
 def create_app() -> FastAPI:
     configure_logging()  # Set up logging early
 
-    app = FastAPI(title="Idea Manager", version=API_VERSION)
-    
-    # Add startup event to log accessible URLs
-    @app.on_event("startup")
-    async def startup_event():
+    # Use lifespan instead of deprecated on_event
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
         logger = logging.getLogger("app")
         logger.info("🚀 Idea Manager API is starting up!")
         logger.info("📋 API Documentation: http://localhost:8000/docs")
         logger.info("🔧 Interactive API: http://localhost:8000/redoc")
         logger.info("💡 Main API: http://localhost:8000")
+        yield
+
+    app = FastAPI(title="Idea Manager", version=API_VERSION, lifespan=lifespan)
 
     # Get CORS origins from settings
     origins = settings.cors_origins
@@ -51,6 +54,17 @@ def create_app() -> FastAPI:
 
     # Handle unexpected errors
     app.add_exception_handler(Exception, unhandled_exception_handler)
+    @app.exception_handler(HTTPException)
+    async def http_error_handler(request: Request, exc: HTTPException):
+        rid = request.headers.get("X-Request-ID", "-")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {"code":"http_error","message": exc.detail},
+                "request_id": rid
+            },
+            headers={"X-Request-ID": rid},
+        )
 
     # Root info endpoint
     @app.get("/", summary="API Info", tags=["health"])

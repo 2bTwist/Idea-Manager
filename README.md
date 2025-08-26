@@ -1,7 +1,7 @@
 
 # Idea Manager API
 
-A modern, scalable FastAPI application for managing and ranking innovative ideas. Built with best practices for production-ready development including proper logging, containerization, database migrations, and comprehensive API documentation.
+A modern, scalable FastAPI application for managing and ranking innovative ideas. Production-ready with authentication, email flows, structured logging, Docker, and Alembic migrations.
 
 ## 🚀 Features
 
@@ -11,6 +11,13 @@ A modern, scalable FastAPI application for managing and ranking innovative ideas
 - **Advanced Filtering**: Filter ideas by AI usage, score range, and text search
 - **Pagination & Sorting**: Efficient data retrieval with customizable sorting options
 
+### User & Admin
+- **Authentication (JWT)**: Register, login, and get current user (`/auth/*`)
+- **Profile**: Update profile and change password
+- **Email Verification**: Sign-up verification token flow
+- **Password Reset**: Request reset + set new password by token
+- **Admin Users**: List, update, and delete users (with safeguards to prevent self-deletion or removing own superuser role)
+
 ### Technical Features
 - **RESTful API**: Clean, documented endpoints with OpenAPI/Swagger
 - **Database Migrations**: Alembic for schema version control
@@ -18,6 +25,7 @@ A modern, scalable FastAPI application for managing and ranking innovative ideas
 - **Health Checks**: Built-in health monitoring endpoints
 - **Containerized**: Docker and Docker Compose for consistent environments
 - **Hot Reload**: Development mode with live code reloading
+ - **Email (SendGrid)**: Real email delivery when configured; safe dev fallback logs messages
 
 ## 🛠 Tech Stack
 
@@ -28,6 +36,7 @@ A modern, scalable FastAPI application for managing and ranking innovative ideas
 - **Validation**: Pydantic 2.11.7
 - **Containerization**: Docker & Docker Compose
 - **Logging**: Custom structured logging with colorlog
+ - **Email**: SendGrid (optional in dev)
 
 ## 📋 Prerequisites
 
@@ -54,6 +63,11 @@ A modern, scalable FastAPI application for managing and ranking innovative ideas
    - API: http://localhost:8000
    - Documentation: http://localhost:8000/docs
    - Health Check: http://localhost:8000/health/
+
+4. (Optional) **Seed an admin user for testing:**
+   ```bash
+   docker compose exec app python -m app.scripts.seed
+   ```
 
 ### Option 2: Local Development
 
@@ -102,19 +116,30 @@ idea-manager/
 │   │   ├── middleware.py        # Custom middleware
 │   │   └── routers/
 │   │       ├── health.py        # Health check endpoints
-│   │       └── ideas.py         # Ideas CRUD endpoints
+│   │       ├── ideas.py         # Ideas CRUD endpoints
+│   │       ├── auth.py          # Auth, profile, password reset/verify
+│   │       └── admin_users.py   # Admin-only user management
 │   ├── core/
 │   │   ├── config.py            # Application settings
+│   │   ├── tokens.py            # Token helpers (hashing)
 │   │   └── logging.py           # Logging configuration
 │   ├── db/
 │   │   ├── base.py              # Database base classes
 │   │   └── session.py           # Database session management
 │   ├── models/
-│   │   └── idea.py              # SQLAlchemy models
+│   │   ├── idea.py              # Idea model
+│   │   ├── user.py              # User model
+│   │   ├── email_verification.py# Email verification token
+│   │   └── password_reset.py    # Password reset token
 │   ├── schemas/
-│   │   └── idea.py              # Pydantic schemas
+│   │   ├── idea.py              # Idea schemas
+│   │   └── user.py              # User/auth schemas
 │   ├── services/
-│   │   └── ideas.py             # Business logic
+│   │   ├── ideas.py             # Ideas business logic
+│   │   ├── users.py             # Users/auth business logic
+│   │   └── email.py             # Email sending (SendGrid/dev)
+│   ├── scripts/
+│   │   └── seed.py              # Dev seeding (admin user)
 │   └── main.py                  # Application entry point
 ├── migrations/                  # Alembic database migrations
 ├── docker-compose.yml          # Multi-container Docker setup
@@ -132,6 +157,28 @@ idea-manager/
 - `GET /ideas/{id}` - Get a specific idea
 - `PUT /ideas/{id}` - Update an idea
 - `DELETE /ideas/{id}` - Delete an idea
+
+### Auth & Profile
+- `POST /auth/register` - Register a new user
+- `POST /auth/token` - Login (OAuth2 password flow), returns JWT
+- `GET /auth/me` - Current user
+- `PATCH /auth/me` - Update profile (full_name)
+- `POST /auth/change-password` - Change password (requires current password)
+
+### Email Verification
+- `POST /auth/request-verify` - Request verification email (always 200)
+- `POST /auth/verify-email` - Verify email by token
+- `GET /auth/tokens/verify/validate` - Validate verify token (dev/UX helper)
+
+### Password Reset
+- `POST /auth/forgot-password` - Request password reset (always 200)
+- `POST /auth/reset-password` - Reset by token
+- `GET /auth/tokens/reset/validate` - Validate reset token (dev/UX helper)
+
+### Admin (Superuser)
+- `GET /admin/users/` - List users (with paging/filter)
+- `PATCH /admin/users/{user_id}` - Update user (is_active, is_superuser)
+- `DELETE /admin/users/{user_id}` - Delete user (cannot delete self)
 
 ### System
 - `GET /` - API information and health
@@ -154,8 +201,24 @@ idea-manager/
 DATABASE_URL=postgresql+asyncpg://ideauser:ideapass@db:5432/ideadb
 
 # Application
-APP_ENV=development  # or production
-LOG_LEVEL=INFO       # DEBUG, INFO, WARNING, ERROR
+APP_ENV=dev                 # dev or production
+LOG_LEVEL=INFO              # DEBUG, INFO, WARNING, ERROR
+SECRET_KEY=change-this      # used for JWT signing
+ACCESS_TOKEN_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# CORS
+BACKEND_CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# URLs (used in emails/links)
+EXTERNAL_BASE_URL=http://localhost:8000
+# FRONTEND_BASE_URL=http://localhost:5173      # optional; used for auth links
+
+# Email (optional; if not provided, emails are logged in dev)
+EMAIL_ENABLED=false
+SENDGRID_API_KEY=
+MAIL_FROM=
+MAIL_FROM_NAME=Idea Manager
 
 # Scoring Weights (optional)
 SCORE_W_SCALABILITY=0.35
@@ -166,7 +229,7 @@ SCORE_W_AI_COMPLEX=0.30
 
 ### Development vs Production
 
-**Development Mode** (`APP_ENV=development`):
+**Development Mode** (`APP_ENV=dev`):
 - Hot reload enabled
 - Detailed logging
 - Volume mounting for live code changes
@@ -199,6 +262,9 @@ alembic upgrade head
 # Rollback
 alembic downgrade -1
 ```
+
+When running alembic locally, use `localhost` in `DATABASE_URL`.
+Inside Docker, use `db` (service name). EntryPoint applies `alembic upgrade head` on startup.
 
 ### Testing the API
 ```bash
@@ -233,6 +299,21 @@ curl "http://localhost:8000/ideas/?sort=score&order=desc"
 ### Volumes
 - `pgdata`: Persistent database storage
 - `.:/app`: Live code mounting (development)
+
+### Common Docker commands
+```bash
+# Stop containers
+docker compose down
+
+# Rebuild images with latest changes
+docker compose up --build -d
+
+# Rebuild clean (no cache)
+docker compose build --no-cache && docker compose up -d
+
+# View logs
+docker compose logs -f app
+```
 
 ## 🔮 Future Enhancements
 

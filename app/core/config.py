@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     MAIL_FROM: str | None = None
     MAIL_FROM_NAME: str | None = "Idea Manager"
     EXTERNAL_BASE_URL: str | None = "http://localhost:8000"
+    FRONTEND_BASE_URL: str | None = "http://localhost:5173"
     EMAIL_ENABLED: bool | None = False
 
     # scoring weights
