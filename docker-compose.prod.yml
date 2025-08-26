@@ -23,7 +23,7 @@ services:
     env_file: .env.prod
     # Expose 8000 on the host so cloudflared (host service) can reach it
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     restart: unless-stopped
 
 volumes:

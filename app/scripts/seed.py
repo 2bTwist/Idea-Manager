@@ -9,7 +9,7 @@ ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "admin123"  # change in prod!
 
 async def main():
-    async with SessionLocal() as db:  # type: AsyncSession
+    async with SessionLocal() as db:  
         res = await db.execute(select(User).where(User.email == ADMIN_EMAIL))
         admin = res.scalar_one_or_none()
         if admin:
