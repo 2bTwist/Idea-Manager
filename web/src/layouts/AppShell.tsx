@@ -34,7 +34,7 @@ export default function AppShell() {
   const location = useLocation()
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Top bar */}
       <header className="border-b">
         <div className="mx-auto max-w-7xl px-4 h-14 flex items-center gap-3">
@@ -56,7 +56,7 @@ export default function AppShell() {
       </header>
 
       {/* Page outlet */}
-      <main className="mx-auto max-w-7xl px-4 py-10">
+      <main className="flex-1 mx-auto max-w-7xl px-4 py-10">
         <Outlet />
       </main>
 
@@ -68,12 +68,12 @@ export default function AppShell() {
         </div>
       </footer>
 
-      {/* Bottom-right help button (non-functional for now) */}
-      <div className="fixed bottom-4 right-4">
-        <Button variant="outline" size="icon" aria-label="Help">
-          <HelpCircle className="size-4" />
-        </Button>
-      </div>
+        {/* Bottom-right help button (non-functional for now) */}
+        <div className="fixed bottom-3 right-4">
+            <Button variant="outline" size="icon" aria-label="Help">
+            <HelpCircle className="size-4" />
+            </Button>
+        </div>
     </div>
   )
 }

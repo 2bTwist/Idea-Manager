@@ -8,7 +8,7 @@ export default function Home() {
       {/* Centered hero */}
       <div className="mx-auto max-w-5xl text-center py-16 sm:py-24 lg:py-28">
         <h1 className="font-extrabold tracking-tight leading-tight text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
-          Manage Projects Like
+          Manage Ideas Like
           <br className="hidden sm:block" />
           <span className="block">Never Before</span>
         </h1>
