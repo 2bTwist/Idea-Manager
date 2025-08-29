@@ -1,65 +1,79 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const NavLinkBase: React.FC<React.ComponentProps<typeof NavLink>> = (props) => {
+function Brand() {
   return (
-    <NavLink
-      {...props}
-      className={({ isActive }) =>
-        cn(
-          "px-3 py-2 text-sm rounded-md transition",
-          isActive
-            ? "bg-accent text-accent-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        )
-      }
-    />
+    <NavLink to="/" className="flex items-center gap-2">
+      <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center shadow-xs">
+        {/* simple placeholder icon (emoji). swap for an SVG later */}
+        <span className="text-sm">⚙️</span>
+      </div>
+      <span className="font-semibold tracking-tight">Idea Manager</span>
+      {/* If you want “ProjectFlow”, just change the text above */}
+    </NavLink>
   )
 }
+
+const NavLinkBase: React.FC<React.ComponentProps<typeof NavLink>> = (props) => (
+  <NavLink
+    {...props}
+    className={({ isActive }) =>
+      cn(
+        "px-3 py-2 text-sm rounded-md transition",
+        isActive
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      )
+    }
+  />
+)
 
 export default function AppShell() {
   const location = useLocation()
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      {/* Top nav */}
+      {/* Top bar */}
       <header className="border-b">
-        <div className="mx-auto max-w-6xl px-4 h-14 flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Idea Manager</span>
-          </div>
+        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center gap-3">
+          <Brand />
 
+          {/* keep main app nav hidden on landing/early – we’ll use it later */}
           <nav className="ml-6 hidden md:flex items-center gap-1">
-            <NavLinkBase to="/">Home</NavLinkBase>
             <NavLinkBase to="/ideas">Ideas</NavLinkBase>
             <NavLinkBase to="/profile">Profile</NavLinkBase>
             <NavLinkBase to="/admin/users">Admin</NavLinkBase>
           </nav>
 
-          <div className="ml-auto flex items-center gap-2">
-            {/* These will be conditionally rendered once auth is wired */}
-            <Button asChild variant="outline">
-              <NavLink to="/signin">Sign in</NavLink>
-            </Button>
-            <Button asChild>
-              <NavLink to="/register">Create account</NavLink>
+          <div className="ml-auto">
+            <Button asChild size="sm" variant="outline">
+              <NavLink to="/signin">Sign In</NavLink>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Page content */}
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      {/* Page outlet */}
+      <main className="mx-auto max-w-7xl px-4 py-10">
         <Outlet />
       </main>
 
-      <footer className="mt-10 border-t">
-        <div className="mx-auto max-w-6xl px-4 h-14 flex items-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Idea Manager
-          <span className="ml-auto">{location.pathname}</span>
+      {/* Footer */}
+      <footer className="mt-auto border-t">
+        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Idea Manager. All rights reserved.
+          <span className="ml-auto hidden sm:inline">{location.pathname}</span>
         </div>
       </footer>
+
+      {/* Bottom-right help button (non-functional for now) */}
+      <div className="fixed bottom-4 right-4">
+        <Button variant="outline" size="icon" aria-label="Help">
+          <HelpCircle className="size-4" />
+        </Button>
+      </div>
     </div>
   )
 }
