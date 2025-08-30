@@ -10,6 +10,7 @@ import IdeaDetail from "@/pages/IdeaDetail"
 import Profile from "@/pages/Profile"
 import AdminUsers from "@/pages/AdminUsers"
 import NotFound from "@/pages/NotFound"
+import Playground from "@/pages/Playground"
 
 // NOTE: guards (auth/verified/admin) come later; for now, everything is public.
 
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Home /> },
+      { path: "/playground", element: <Playground /> },
       { path: "signin", element: <SignIn /> },
       { path: "register", element: <Register /> },
       { path: "verify-email", element: <VerifyEmail /> },

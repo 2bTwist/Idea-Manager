@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useLocation } from "react-router-dom"
+import { Toaster } from "@/components/ui/sonner"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -74,6 +75,8 @@ export default function AppShell() {
             <HelpCircle className="size-4" />
             </Button>
         </div>
+
+        <Toaster richColors closeButton position="top-center" />
     </div>
   )
 }
