@@ -9,13 +9,31 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
+import * as api from "@/lib/api"
 
 export default function Playground() {
+  async function ping() {
+    try {
+      const res = await api.health()
+      if (res.ok) {
+        toast.success(`API healthy: ${res.data.status}`)
+      } else {
+        toast.error(`Health failed (${res.error.status})`, { description: res.error.message })
+      }
+    } catch (err: any) {
+      // Handles uncaught promise rejections (network errors, etc)
+      const status = err?.status ?? "Unknown"
+      const message = err?.message ?? "Network error"
+      toast.error(`Health failed (${status})`, { description: message })
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <h2 className="text-xl font-semibold">Design System Playground</h2>
 
       <section className="space-x-2">
+        <Button onClick={ping}>Ping /health</Button>
         <Badge>Default</Badge>
         <Badge variant="secondary">Secondary</Badge>
         <Badge variant="outline">Outline</Badge>

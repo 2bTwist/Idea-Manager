@@ -6,7 +6,7 @@ from app.api.deps import get_db, get_current_user
 from app.schemas.user import (
     UserCreate, UserOut, Token, ProfileUpdate, ChangePasswordIn,
     MessageResponse, ForgotPasswordIn, ResetPasswordIn, RequestVerifyIn,
-    VerifyEmailOut, VerifyEmailDevOut)
+    VerifyEmailOut, VerifyEmailDevOut, VerifyEmailIn)
 from app.services.users import (
     get_by_email, create_user, authenticate, set_user_password, update_profile,
     change_password, create_password_reset_token, reset_password_with_token,
@@ -50,11 +50,8 @@ async def request_verify(payload: RequestVerifyIn, db: AsyncSession = Depends(ge
     return VerifyEmailOut(message="If the account exists and is not verified, a verification email has been sent.")
 
 @router.post("/verify-email", response_model=VerifyEmailOut)
-async def verify_email_post(payload: dict, db: AsyncSession = Depends(get_db)):
-    token = payload.get("token")
-    if not token:
-        raise HTTPException(status_code=422, detail="token is required")
-    ok = await verify_email_with_token(db, token)
+async def verify_email_post(payload: VerifyEmailIn, db: AsyncSession = Depends(get_db)):
+    ok = await verify_email_with_token(db, payload.token)
     if not ok:
         raise HTTPException(status_code=400, detail="Invalid or expired verification link")
     return VerifyEmailOut(message="Email verified. You can sign in now.")

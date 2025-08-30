@@ -64,6 +64,10 @@ class ResetPasswordIn(BaseModel):
 class RequestVerifyIn(BaseModel):
     email: EmailStr
 
+class VerifyEmailIn(BaseModel):
+    email: EmailStr
+    token: str
+
 class VerifyEmailOut(BaseModel):
     message: str
 
