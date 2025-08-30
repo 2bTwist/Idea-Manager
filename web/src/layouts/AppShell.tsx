@@ -3,6 +3,10 @@ import { Toaster } from "@/components/ui/sonner"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Suspense } from "react"
+import { LoadingSpinner } from "@/components/system/Loading"
+import { ErrorBoundary } from "@/components/system/ErrorBoundary"
+
 
 function Brand() {
   return (
@@ -58,7 +62,11 @@ export default function AppShell() {
 
       {/* Page outlet */}
       <main className="flex-1 mx-auto max-w-7xl px-4 py-10 pt-20">
-        <Outlet />
+        <ErrorBoundary>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Outlet />
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* Footer */}
