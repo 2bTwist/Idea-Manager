@@ -22,7 +22,7 @@ const NavLinkBase: React.FC<React.ComponentProps<typeof NavLink>> = (props) => (
     {...props}
     className={({ isActive }) =>
       cn(
-        "px-3 py-2 text-sm rounded-md transition",
+        "px-4 py-2 text-lg font-medium rounded-md transition",
         isActive
           ? "bg-accent text-accent-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
