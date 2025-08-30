@@ -20,22 +20,22 @@ export default function AuthCard({
     <div className="min-h-[calc(100vh-7rem)] grid place-items-center">
       <Card
         className={cn(
-          "w-full max-w-md h-[32rem] sm:h-[28rem] flex flex-col justify-center border-border/60 bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/50",
+          "w-full max-w-4xl h-[52rem] sm:h-[48rem] flex flex-col justify-center border-border/60 bg-card/60 backdrop-blur supports-[backdrop-filter]:bg-card/50",
           className
         )}
       >
-        <CardContent className="flex-1 flex flex-col justify-center p-6 sm:p-8">
-          <div className="text-center space-y-1">
-            <h1 className="text-base font-semibold">{title}</h1>
+        <CardContent className="flex-1 flex flex-col justify-center p-16 sm:p-24">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-extrabold">{title}</h1>
             {subtitle ? (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-2xl text-muted-foreground">{subtitle}</p>
             ) : null}
           </div>
 
-          <div className="mt-6 space-y-4 flex-1 flex flex-col justify-center">{children}</div>
+          <div className="mt-16 space-y-10 flex-1 flex flex-col justify-center">{children}</div>
 
           {footer ? (
-            <p className="mt-6 text-center text-sm text-muted-foreground">
+            <p className="mt-16 text-center text-xl text-muted-foreground">
               {footer}
             </p>
           ) : null}

@@ -37,7 +37,7 @@ export default function AppShell() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Top bar */}
-      <header className="border-b">
+      <header className="border-b fixed top-0 left-0 w-full z-30 bg-background">
         <div className="mx-auto max-w-7xl px-4 h-14 flex items-center gap-3">
           <Brand />
 
@@ -57,7 +57,7 @@ export default function AppShell() {
       </header>
 
       {/* Page outlet */}
-      <main className="flex-1 mx-auto max-w-7xl px-4 py-10">
+      <main className="flex-1 mx-auto max-w-7xl px-4 py-10 pt-20">
         <Outlet />
       </main>
 
