@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request
 from app.core.rate_limit import limiter
+import logging
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user
@@ -59,6 +60,9 @@ async def verify_email_post(payload: VerifyEmailIn, db: AsyncSession = Depends(g
 @router.post("/token", response_model=Token)
 @limiter.limit("10/minute")  # per-IP: 10 login attempts/min
 async def login(request: Request, response: Response, form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    logger = logging.getLogger("app")
+    # dev: log the parsed OAuth2 form to help debug browser vs curl differences
+    logger.debug("/auth/token received form: grant_type=%s username=%s scope=%s", form.grant_type, form.username, form.scopes)
     user = await authenticate(db, email=form.username, password=form.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")

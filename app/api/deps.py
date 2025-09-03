@@ -11,18 +11,22 @@ from app.models.user import User
 from sqlalchemy import select
 from uuid import UUID
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+# Make the OAuth2 dependency non-fatal so we can fall back to cookie-based sessions.
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
         yield session
 
 async def get_bearer_or_cookie_token(
-    token: str = Depends(oauth2_scheme),
+    token: str | None = Depends(oauth2_scheme),
     cookie_token: str | None = Cookie(default=None, alias=settings.COOKIE_SESSION_NAME),
 ) -> str:
     # Prefer Authorization header; if missing, use cookie
-    return token or (cookie_token or "")
+    # oauth2_scheme now returns None instead of raising; fall back to cookie.
+    raw = token or cookie_token
+    # Return empty string if nothing present; caller (get_current_user) will raise a credentials error.
+    return raw or ""
 
 async def get_current_user(
     raw_token: str = Depends(get_bearer_or_cookie_token),

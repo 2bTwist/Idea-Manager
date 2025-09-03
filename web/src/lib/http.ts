@@ -72,12 +72,13 @@ export async function request<T>(
   try { payload = text ? JSON.parse(text) : null } catch { payload = text }
 
   if (!res.ok) {
+    const errMsg =
+      (payload && ((payload.error && (payload.error.message || payload.error)) || payload.detail || payload.message)) ||
+      res.statusText ||
+      "Request failed"
     const err: ApiError = {
       status: res.status,
-      message:
-        (payload && (payload.detail || payload.message)) ||
-        res.statusText ||
-        "Request failed",
+      message: errMsg,
       details: payload,
     }
     return { ok: false, error: err }

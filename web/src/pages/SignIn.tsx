@@ -27,7 +27,7 @@ export default function SignIn() {
       toast.success("Signed in")
       navigate(from, { replace: true })
     } catch (err: any) {
-      toast.error("Sign in failed", { description: err?.message || "Check your credentials" })
+      toast.error("Sign in failed", { description: err?.error?.message || err?.message || "Check your credentials" });
     } finally {
       toast.dismiss(t)
     }

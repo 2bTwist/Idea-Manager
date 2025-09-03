@@ -25,30 +25,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // In cookie mode, just ask the server who we are.
       // In bearer mode, only try if a token exists.
       if (AUTH_MODE === "cookie" || getToken()) {
-        const me = await api.auth.me()
-        if (me.ok) setUser(me.data)
-        else setUser(null)
+        try {
+          console.log("AuthProvider: checking /auth/me (boot)")
+          const me = await api.auth.me()
+          console.log("AuthProvider: /auth/me (boot) result:", me)
+          if (me.ok) setUser(me.data)
+          else setUser(null)
+        } catch (e) {
+          console.error("AuthProvider: error calling /auth/me (boot)", e)
+          setUser(null)
+        }
       }
       setBooted(true)
     })()
   }, [])
 
   async function login(email: string, password: string) {
+    console.log("AuthProvider: login attempt for", email)
     const res = await api.auth.login(email, password)
-    if (!res.ok) throw new Error(res.error.message)
+    console.log("AuthProvider: login response:", res)
+    if (!res.ok) {
+      console.error("AuthProvider: login failed:", res.error)
+      // prefer nested message if present
+      const details = res.error.details as any
+      const nested = details && (details.error?.message || details.message || details.detail)
+      throw new Error(nested || res.error.message)
+    }
     // bearer-only: store token for old mode
     if (AUTH_MODE === "bearer") setToken(res.data.access_token)
 
-    const me = await api.auth.me()
-    if (!me.ok) {
-      if (AUTH_MODE === "bearer") clearToken()
-      throw new Error(me.error.message)
+    try {
+      console.log("AuthProvider: fetching /auth/me after login")
+      const me = await api.auth.me()
+      console.log("AuthProvider: /auth/me after login result:", me)
+      if (!me.ok) {
+        if (AUTH_MODE === "bearer") clearToken()
+        console.error("AuthProvider: /auth/me returned error:", me.error)
+        throw new Error(me.error.message)
+      }
+      if (!me.data.is_verified) {
+        // optional: route them to verify page instead
+        throw new Error("Please verify your email before continuing.")
+      }
+      setUser(me.data)
+    } catch (e) {
+      // rethrow to be handled by caller
+      throw e
     }
-    if (!me.data.is_verified) {
-      // optional: route them to verify page instead
-      throw new Error("Please verify your email before continuing.")
-    }
-    setUser(me.data)
+    
   }
 
   async function register(email: string, password: string, full_name: string) {
