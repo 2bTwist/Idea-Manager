@@ -1,4 +1,5 @@
 import { createBrowserRouter, redirect } from "react-router-dom"
+import RequireVerified from "@/components/auth/RequireVerified"
 import RequireAuth from "@/components/auth/RequireAuth"
 import RedirectIfAuthed from "@/components/auth/RedirectIfAuthed"
 
@@ -36,10 +37,10 @@ export const router = createBrowserRouter([
       { path: "reset-password", element: <ResetPassword /> },
 
       // Protected sections
-      { path: "ideas", element: <RequireAuth><Ideas /></RequireAuth> },
-      { path: "ideas/:id", element: <RequireAuth><IdeaDetail /></RequireAuth> },
-      { path: "profile", element: <RequireAuth><Profile /></RequireAuth> },
-      { path: "admin/users", element: <RequireAuth><AdminUsers /></RequireAuth> },
+  { path: "ideas", element: <RequireVerified><Ideas /></RequireVerified> },
+  { path: "ideas/:id", element: <RequireVerified><IdeaDetail /></RequireVerified> },
+  { path: "profile", element: <RequireAuth><Profile /></RequireAuth> },
+  { path: "admin/users", element: <RequireVerified><AdminUsers /></RequireVerified> },
 
       { path: "*", element: <NotFound /> },
     ],

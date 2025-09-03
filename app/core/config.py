@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # CORS - Store as string and convert to list
     BACKEND_CORS_ORIGINS: str = ""
 
+    COOKIE_SESSION_NAME: str = "im_access"
+    COOKIE_SECURE: bool = False            # True in prod (set via .env)
+    COOKIE_SAMESITE: str = "lax"           # "strict" or "lax"; use "strict" if FE/BE same site
+    COOKIE_MAX_AGE_SECONDS: int = 60 * 60  # 1 hour; match ACCESS_TOKEN_EXPIRE_MINUTES
+
     @computed_field
     @property
     def cors_origins(self) -> List[str]:

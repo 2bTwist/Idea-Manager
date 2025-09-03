@@ -22,6 +22,7 @@ export type Me = {
 }
 
 export const auth = {
+  logout: () => http.post<void>("/auth/logout", undefined, { auth: false }),
   login: (email: string, password: string) => {
     const form = new URLSearchParams()
     form.set("grant_type", "password")

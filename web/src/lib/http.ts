@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "@/config"
 import { getToken } from "@/lib/session"
+import { AUTH_MODE } from "@/config"
 
 export type ApiError = {
   status: number
@@ -36,7 +37,7 @@ export async function request<T>(
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), timeoutMs)
 
-  const token = auth ? getToken() : ""
+  const token = auth && AUTH_MODE === "bearer" ? getToken() : ""
 
   const isFormLike = body instanceof FormData || body instanceof URLSearchParams
   const isString = typeof body === "string"
@@ -54,7 +55,8 @@ export async function request<T>(
       ? (isFormLike || isString ? (body as any) : JSON.stringify(body))
       : undefined,
     signal: ctrl.signal,
-    credentials: "omit",
+    // IMPORTANT: include cookies
+    credentials: "include",
   }).catch((e) => {
     clearTimeout(t)
     return Promise.reject({

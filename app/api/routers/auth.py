@@ -58,12 +58,33 @@ async def verify_email_post(payload: VerifyEmailIn, db: AsyncSession = Depends(g
 
 @router.post("/token", response_model=Token)
 @limiter.limit("10/minute")  # per-IP: 10 login attempts/min
-async def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+async def login(request: Request, response: Response, form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     user = await authenticate(db, email=form.username, password=form.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     token = create_access_token(str(user.id))
+
+    # NEW: also set httpOnly cookie for the SPA
+    response.set_cookie(
+        key=settings.COOKIE_SESSION_NAME,
+        value=token,
+        httponly=True,
+        secure=bool(settings.COOKIE_SECURE),
+        samesite=settings.COOKIE_SAMESITE,  # "lax" recommended for email link flows
+        max_age=settings.COOKIE_MAX_AGE_SECONDS,
+        path="/",
+    )
+
     return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(response: Response):
+    # clear cookie
+    response.delete_cookie(
+        key=settings.COOKIE_SESSION_NAME,
+        path="/",
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):

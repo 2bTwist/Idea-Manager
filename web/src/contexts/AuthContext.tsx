@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { AUTH_MODE } from "@/config"
 import * as api from "@/lib/api"
 import { clearToken, getToken, setToken } from "@/lib/session"
 
-type User = { email: string } | null
+type User = api.Me | null
 
 type AuthContextShape = {
   user: User
@@ -20,25 +21,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // On boot: if a token exists assume authed (Phase 2.5 will verify /me)
   useEffect(() => {
-    const token = getToken()
-    if (token) setUser({ email: "you@session" })
-    setBooted(true)
+    (async () => {
+      // In cookie mode, just ask the server who we are.
+      // In bearer mode, only try if a token exists.
+      if (AUTH_MODE === "cookie" || getToken()) {
+        const me = await api.auth.me()
+        if (me.ok) setUser(me.data)
+        else setUser(null)
+      }
+      setBooted(true)
+    })()
   }, [])
 
   async function login(email: string, password: string) {
     const res = await api.auth.login(email, password)
     if (!res.ok) throw new Error(res.error.message)
-    setToken(res.data.access_token)
+    // bearer-only: store token for old mode
+    if (AUTH_MODE === "bearer") setToken(res.data.access_token)
 
-    // Try to fetch profile to inspect is_verified
     const me = await api.auth.me()
-    if (me.ok && me.data && me.data.is_verified === false) {
-      // block usage until verified
-      clearToken()
-      throw new Error("Please verify your email before signing in.")
+    if (!me.ok) {
+      if (AUTH_MODE === "bearer") clearToken()
+      throw new Error(me.error.message)
     }
-
-    setUser({ email })
+    if (!me.data.is_verified) {
+      // optional: route them to verify page instead
+      throw new Error("Please verify your email before continuing.")
+    }
+    setUser(me.data)
   }
 
   async function register(email: string, password: string, full_name: string) {
@@ -48,8 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function logout() {
-    clearToken()
-    setUser(null)
+    // call backend to clear cookie
+    api.auth.logout().finally(() => {
+      clearToken()
+      setUser(null)
+    })
   }
 
   const value = useMemo(

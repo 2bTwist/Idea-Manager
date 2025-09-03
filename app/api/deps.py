@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import SessionLocal
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from app.core.config import settings
@@ -17,8 +17,15 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
         yield session
 
-async def get_current_user(
+async def get_bearer_or_cookie_token(
     token: str = Depends(oauth2_scheme),
+    cookie_token: str | None = Cookie(default=None, alias=settings.COOKIE_SESSION_NAME),
+) -> str:
+    # Prefer Authorization header; if missing, use cookie
+    return token or (cookie_token or "")
+
+async def get_current_user(
+    raw_token: str = Depends(get_bearer_or_cookie_token),
     db: AsyncSession = Depends(get_db),
 ) -> User:
     credentials_exc = HTTPException(
@@ -27,11 +34,11 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ACCESS_TOKEN_ALGORITHM])
+        payload = jwt.decode(raw_token, settings.SECRET_KEY, algorithms=[settings.ACCESS_TOKEN_ALGORITHM])
         sub = payload.get("sub")
         if sub is None:
             raise credentials_exc
-        user_id = UUID(sub)  # <- parse once here
+        user_id = UUID(sub)
     except (JWTError, ValueError):
         raise credentials_exc
     res = await db.execute(select(User).where(User.id == user_id))
