@@ -1,5 +1,7 @@
 import { createBrowserRouter, redirect } from "react-router-dom"
 import RequireAuth from "@/components/auth/RequireAuth"
+import RedirectIfAuthed from "@/components/auth/RedirectIfAuthed"
+
 
 import AppShell from "@/layouts/AppShell"
 import Home from "@/pages/Home"
@@ -14,20 +16,21 @@ import AdminUsers from "@/pages/AdminUsers"
 import NotFound from "@/pages/NotFound"
 import Playground from "@/pages/Playground"
 
-// NOTE: guards (auth/verified/admin) come later; for now, everything is public.
-
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <AppShell />,
     errorElement: <NotFound />,
     children: [
-      { index: true, element: <Home /> },
+      // Home should bounce authed users to /ideas
+      { index: true, element: <RedirectIfAuthed><Home /></RedirectIfAuthed> },
       { path: "/playground", element: <Playground /> },
 
-      // Public auth routes
-      { path: "signin", element: <SignIn /> },
-      { path: "register", element: <Register /> },
+      // Public auth routes should be hidden from authed users
+      { path: "signin", element: <RedirectIfAuthed><SignIn /></RedirectIfAuthed> },
+      { path: "register", element: <RedirectIfAuthed><Register /></RedirectIfAuthed> },
+
+      // keep verify/reset accessible even when logged in (useful for edge cases)
       { path: "verify-email", element: <VerifyEmail /> },
       { path: "auth/verify-email", element: <VerifyEmail /> },
       { path: "reset-password", element: <ResetPassword /> },

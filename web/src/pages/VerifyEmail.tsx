@@ -14,6 +14,7 @@ function useQuery() {
 
 export default function VerifyEmail() {
   const shownInvalidToast = useRef(false)
+  const shownValidToast = useRef(false)
   const q = useQuery()
   const navigate = useNavigate()
   const token = q.get("token") || ""
@@ -40,7 +41,10 @@ export default function VerifyEmail() {
       }
       setTokenValid(res.data.valid)
       if (res.data.valid) {
-        toast.success("Verification link is valid")
+        if (!shownValidToast.current) {
+          toast.success("Verification link is valid")
+          shownValidToast.current = true
+        }
       } else if (!shownInvalidToast.current) {
         toast.error("This verification link is invalid or has expired")
         shownInvalidToast.current = true

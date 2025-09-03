@@ -10,17 +10,17 @@ import { ErrorBoundary } from "@/components/system/ErrorBoundary"
 
 
 function Brand() {
+  const { isAuthed } = useAuth()
   return (
-    <NavLink to="/" className="flex items-center gap-2">
+    <NavLink to={isAuthed ? "/ideas" : "/"} className="flex items-center gap-2">
       <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center shadow-xs">
-        {/* simple placeholder icon (emoji). swap for an SVG later */}
         <span className="text-sm">⚙️</span>
       </div>
       <span className="font-semibold tracking-tight">Idea Manager</span>
-      {/* If you want “ProjectFlow”, just change the text above */}
     </NavLink>
   )
 }
+
 
 const NavLinkBase: React.FC<React.ComponentProps<typeof NavLink>> = (props) => (
   <NavLink
