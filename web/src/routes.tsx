@@ -1,4 +1,6 @@
 import { createBrowserRouter, redirect } from "react-router-dom"
+import RequireAuth from "@/components/auth/RequireAuth"
+
 import AppShell from "@/layouts/AppShell"
 import Home from "@/pages/Home"
 import SignIn from "@/pages/SignIn"
@@ -22,16 +24,19 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "/playground", element: <Playground /> },
+
+      // Public auth routes
       { path: "signin", element: <SignIn /> },
       { path: "register", element: <Register /> },
       { path: "verify-email", element: <VerifyEmail /> },
       { path: "reset-password", element: <ResetPassword /> },
 
-      // App sections
-      { path: "ideas", element: <Ideas /> },
-      { path: "ideas/:id", element: <IdeaDetail /> },
-      { path: "profile", element: <Profile /> },
-      { path: "admin/users", element: <AdminUsers /> },
+      // Protected sections
+      { path: "ideas", element: <RequireAuth><Ideas /></RequireAuth> },
+      { path: "ideas/:id", element: <RequireAuth><IdeaDetail /></RequireAuth> },
+      { path: "profile", element: <RequireAuth><Profile /></RequireAuth> },
+      { path: "admin/users", element: <RequireAuth><AdminUsers /></RequireAuth> },
+
       { path: "*", element: <NotFound /> },
     ],
   },

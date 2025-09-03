@@ -37,15 +37,22 @@ export async function request<T>(
   const t = setTimeout(() => ctrl.abort(), timeoutMs)
 
   const token = auth ? getToken() : ""
+
+  const isFormLike = body instanceof FormData || body instanceof URLSearchParams
+  const isString = typeof body === "string"
+
   const res: Response = await fetch(joinURL(path), {
     method,
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
+      // Only set JSON header when we're actually sending JSON
+      ...(isFormLike || isString ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
-    body: body != null ? JSON.stringify(body) : undefined,
+    body: body != null
+      ? (isFormLike || isString ? (body as any) : JSON.stringify(body))
+      : undefined,
     signal: ctrl.signal,
     credentials: "omit",
   }).catch((e) => {

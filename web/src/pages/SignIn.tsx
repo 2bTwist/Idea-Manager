@@ -1,23 +1,36 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { NavLink } from "react-router-dom"
+import { useNavigate, useLocation, NavLink } from "react-router-dom"
+import { useAuth } from "@/contexts/AuthContext"    
 import { toast } from "sonner"
 import type { FormEvent } from "react"
 import AuthCard from "@/components/auth/AuthCard"
 
 export default function SignIn() {
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const loc = useLocation() as any
+  const from = loc.state?.from?.pathname || "/ideas"
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
     const email = String(fd.get("email") || "").trim()
     const password = String(fd.get("password") || "").trim()
 
-    if (!email || !password) {
-      toast.error("Please fill in both fields")
-      return
+    if (!email || !password) return toast.error("Please fill in both fields")
+
+    const t = toast.loading("Signing in…")
+    try {
+      await login(email, password)
+      toast.success("Signed in")
+      navigate(from, { replace: true })
+    } catch (err: any) {
+      toast.error("Sign in failed", { description: err?.message || "Check your credentials" })
+    } finally {
+      toast.dismiss(t)
     }
-    toast("Submitting…", { description: "Real auth wired in Phase 2" })
   }
 
   return (

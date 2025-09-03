@@ -1,4 +1,5 @@
-import { Outlet, NavLink, useLocation } from "react-router-dom"
+import { useAuth } from "@/contexts/AuthContext"
+import { Outlet, NavLink, useLocation, useNavigate} from "react-router-dom"
 import { Toaster } from "@/components/ui/sonner"
 import { Button } from "@/components/ui/button"
 import { HelpCircle } from "lucide-react"
@@ -37,6 +38,9 @@ const NavLinkBase: React.FC<React.ComponentProps<typeof NavLink>> = (props) => (
 
 export default function AppShell() {
   const location = useLocation()
+  const { isAuthed, logout } = useAuth()
+  const navigate = useNavigate()
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -44,8 +48,6 @@ export default function AppShell() {
       <header className="border-b fixed top-0 left-0 w-full z-30 bg-background">
         <div className="mx-auto max-w-7xl px-4 h-14 flex items-center gap-3">
           <Brand />
-
-          {/* keep main app nav hidden on landing/early – we’ll use it later */}
           <nav className="ml-6 hidden md:flex items-center gap-1">
             <NavLinkBase to="/ideas">Ideas</NavLinkBase>
             <NavLinkBase to="/profile">Profile</NavLinkBase>
@@ -53,9 +55,22 @@ export default function AppShell() {
           </nav>
 
           <div className="ml-auto">
-            <Button asChild size="sm" variant="outline">
-              <NavLink to="/signin">Sign In</NavLink>
-            </Button>
+            {isAuthed ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  logout()
+                  navigate("/", { replace: true })
+                }}
+              >
+                Logout
+              </Button>
+            ) : (
+              <Button asChild size="sm" variant="outline">
+                <NavLink to="/signin">Sign In</NavLink>
+              </Button>
+            )}
           </div>
         </div>
       </header>
