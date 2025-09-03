@@ -29,6 +29,7 @@ export const router = createBrowserRouter([
       { path: "signin", element: <SignIn /> },
       { path: "register", element: <Register /> },
       { path: "verify-email", element: <VerifyEmail /> },
+      { path: "auth/verify-email", element: <VerifyEmail /> },
       { path: "reset-password", element: <ResetPassword /> },
 
       // Protected sections

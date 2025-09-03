@@ -8,7 +8,7 @@ type AuthContextShape = {
   user: User
   isAuthed: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, full_name: string) => Promise<void>
   logout: () => void
 }
 
@@ -29,11 +29,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await api.auth.login(email, password)
     if (!res.ok) throw new Error(res.error.message)
     setToken(res.data.access_token)
+
+    // Try to fetch profile to inspect is_verified
+    const me = await api.auth.me()
+    if (me.ok && me.data && me.data.is_verified === false) {
+      // block usage until verified
+      clearToken()
+      throw new Error("Please verify your email before signing in.")
+    }
+
     setUser({ email })
   }
 
-  async function register(email: string, password: string) {
-    const res = await api.auth.register(email, password)
+  async function register(email: string, password: string, full_name: string) {
+    const res = await api.auth.register(email, password, full_name)
     if (!res.ok) throw new Error(res.error.message)
     // optional: auto-login if backend returns token; for now require manual sign-in
   }

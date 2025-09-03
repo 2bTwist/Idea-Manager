@@ -46,7 +46,7 @@ export default function Register() {
         : "Check your email to verify your account.",
     });
 
-    navigate(res.data.is_verified ? "/signin" : "/verify-email");
+  navigate(res.data.is_verified ? "/signin" : `/auth/verify-email?email=${encodeURIComponent(email)}`);
   }
 
   return (
