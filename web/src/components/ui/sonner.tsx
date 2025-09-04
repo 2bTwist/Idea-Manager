@@ -1,5 +1,3 @@
-import { Toaster } from "sonner"
-
 export { Toaster } from "sonner"
 
 // convenience wrappers if you want later:

@@ -1,4 +1,4 @@
-import { createBrowserRouter, redirect } from "react-router-dom"
+import { createBrowserRouter } from "react-router-dom"
 import RequireVerified from "@/components/auth/RequireVerified"
 import RequireAuth from "@/components/auth/RequireAuth"
 import RedirectIfAuthed from "@/components/auth/RedirectIfAuthed"

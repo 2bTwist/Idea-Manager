@@ -59,3 +59,77 @@ export const auth = {
     ),
   
 }
+
+// ---------- Ideas ----------
+export type Idea = {
+  id: string
+  title: string
+  description: string
+  scalability: number
+  ease_to_build: number
+  uses_ai: boolean
+  ai_complexity: number
+  tags?: string[]
+  score: number
+  created_at: string
+  updated_at: string
+  owner?: { id: string; full_name?: string | null } | null
+}
+
+export type IdeasPage = {
+  items: Idea[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export const ideas = {
+  list: (params: {
+    limit?: number
+    offset?: number
+    q?: string
+    sort?: "created_at" | "score"
+    order?: "asc" | "desc"
+    uses_ai?: boolean | null
+    min_score?: number | null
+    max_score?: number | null
+    tags?: string[] | null
+  }) => {
+    const qs = new URLSearchParams()
+    if (params.limit != null) qs.set("limit", String(params.limit))
+    if (params.offset != null) qs.set("offset", String(params.offset))
+    if (params.q) qs.set("q", params.q)
+    if (params.sort) qs.set("sort", params.sort)
+    if (params.order) qs.set("order", params.order)
+    if (params.uses_ai != null) qs.set("uses_ai", String(params.uses_ai))
+    if (params.min_score != null) qs.set("min_score", String(params.min_score))
+    if (params.max_score != null) qs.set("max_score", String(params.max_score))
+    if (params.tags && params.tags.length) {
+      for (const t of params.tags) qs.append("tags", t)
+    }
+    return http.get<IdeasPage>(`/ideas?${qs.toString()}`)
+  },
+
+  create: (payload: {
+    title: string
+    description: string
+    scalability: number
+    ease_to_build: number
+    uses_ai: boolean
+    ai_complexity: number
+    tags?: string[]
+  }) => http.post<Idea>("/ideas", payload),
+
+  update: (id: string, patch: Partial<Omit<Idea, "id" | "created_at" | "updated_at" | "score" | "owner">>) =>
+    http.patch<Idea>(`/ideas/${encodeURIComponent(id)}`, patch),
+
+  del: (id: string) => http.del<{ message: string }>(`/ideas/${encodeURIComponent(id)}`),
+
+  addTags: (id: string, tags: string[]) =>
+    http.post<Idea>(`/ideas/${encodeURIComponent(id)}/tags`, { tags }),
+
+  removeTags: (id: string, tags: string[]) =>
+    http.del<Idea>(`/ideas/${encodeURIComponent(id)}/tags`, { body: { tags } }),
+
+  listAvailableTags: () => http.get<{ available: string[] }>("/ideas/meta/tags"),
+}
