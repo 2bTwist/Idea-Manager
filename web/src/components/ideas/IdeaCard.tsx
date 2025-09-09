@@ -32,12 +32,18 @@ export function IdeaCard({
   idea: Idea
   onDelete?: (id: string) => void
 }) {
+  const createdStr = new Date(idea.created_at).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+
   return (
-    <Card className="max-w-lg border-border/60">
-      <CardHeader className="px-6 pb-0">
+    <Card className="w-full rounded-2xl border border-border/60 bg-card/60 shadow-sm">
+      <CardHeader className="pb-0">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <CardTitle className="text-xl">{idea.title}</CardTitle>
+            <CardTitle className="text-lg md:text-[1.15rem] font-semibold">{idea.title}</CardTitle>
             <p className="text-sm text-muted-foreground line-clamp-2">{idea.description}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -67,18 +73,18 @@ export function IdeaCard({
       </CardContent>
 
       <CardFooter className="pt-4 border-t border-border/30">
-        <div className="mt-2 flex w-full items-center justify-between text-sm text-muted-foreground">
+        <div className="mt-2 flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
-            <span>{new Date(idea.created_at).toLocaleDateString()}</span>
+            <time dateTime={idea.created_at} className="text-xs text-muted-foreground">{createdStr}</time>
             {idea.tags?.length ? (
-              <span className="ml-2 truncate max-w-[12rem]">
-                {idea.tags.slice(0, 3).map(t => <Badge key={t} variant="outline" className="mr-1">{t}</Badge>)}
+              <span className="ml-2 truncate max-w-[12rem] text-xs">
+                {idea.tags.slice(0, 3).map(t => <Badge key={t} variant="outline" className="mr-1 text-xs">{t}</Badge>)}
                 {idea.tags.length > 3 ? "…" : null}
               </span>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
-            <span className="mr-1">Avg:</span>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="mr-1 text-xs">Avg:</span>
             <Stars value={idea.score} />
             <Button
               variant="ghost"
@@ -90,7 +96,7 @@ export function IdeaCard({
             >
               <Trash2 className="size-4" />
             </Button>
-          </div>
+           </div>
         </div>
       </CardFooter>
     </Card>
