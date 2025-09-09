@@ -89,8 +89,18 @@ export async function request<T>(
 
 // Convenience helpers
 export const http = {
-  get: <T>(p: string, o?: Omit<Parameters<typeof request<T>>[1], "method" | "body">) =>
-    request<T>(p, { ...o, method: "GET" }),
+  // Basic dedupe for concurrent GET requests: if the same path is requested
+  // while a previous GET is still in-flight, return the same promise.
+  _inFlightGets: new Map<string, Promise<ApiResult<any>>>(),
+  get: <T>(p: string, o?: Omit<Parameters<typeof request<T>>[1], "method" | "body">) => {
+    const key = `${p}:${JSON.stringify(o ?? {})}`
+    const existing = (http as any)._inFlightGets.get(key) as Promise<ApiResult<T>> | undefined
+    if (existing) return existing
+    const prom = request<T>(p, { ...(o as any), method: "GET" })
+      .finally(() => { (http as any)._inFlightGets.delete(key) })
+    ;(http as any)._inFlightGets.set(key, prom)
+    return prom
+  },
   post: <T>(p: string, body?: unknown, o?: Omit<Parameters<typeof request<T>>[1], "method">) =>
     request<T>(p, { ...o, method: "POST", body }),
   put:  <T>(p: string, body?: unknown, o?: Omit<Parameters<typeof request<T>>[1], "method">) =>

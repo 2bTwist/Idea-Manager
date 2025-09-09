@@ -23,12 +23,11 @@ export function IdeaCard({
   idea: Idea
   onDelete?: (id: string) => void
 }) {
-  const getScoreColor = (score: number) => {
-    // handle both 0-5 and 0-100 scales
-    const s = score > 10 ? score : Math.round((score / 5) * 100)
-    if (s >= 80) return "text-green-600 dark:text-green-400 bg-muted/50"
-    if (s >= 60) return "text-yellow-600 dark:text-yellow-400 bg-muted/50"
-    if (s >= 40) return "text-orange-600 dark:text-orange-400 bg-muted/50"
+  const getScoreColor = (percent: number) => {
+    // percent should be 0..100
+    if (percent >= 80) return "text-green-600 dark:text-green-400 bg-muted/50"
+    if (percent >= 60) return "text-yellow-600 dark:text-yellow-400 bg-muted/50"
+    if (percent >= 40) return "text-orange-600 dark:text-orange-400 bg-muted/50"
     return "text-red-600 dark:text-red-400 bg-muted/50"
   }
 
@@ -37,6 +36,9 @@ export function IdeaCard({
     day: "numeric",
     year: "numeric",
   })
+
+  // idea.score from the backend is 0..5 (see app/models/idea.py). Convert to 0..100 for display.
+  const percentScore = idea.score > 10 ? Math.round(idea.score) : Math.round((idea.score / 5) * 100)
 
   return (
   <Card className="group relative bg-card border-border hover:border-accent-foreground/20 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 rounded-2xl min-h-[340px] flex flex-col w-full sm:w-80 md:w-96">
@@ -101,7 +103,7 @@ export function IdeaCard({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs text-muted-foreground">Build Ease</span>
+                  <span className="text-xs text-muted-foreground">Ease of Build</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Bar value={idea.ease_to_build} max={5} />
@@ -145,8 +147,8 @@ export function IdeaCard({
           </div>
 
           <div className="absolute left-1/2 transform -translate-x-1/2">
-            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium ${getScoreColor(idea.score)}`}>
-              <span>{idea.score}</span>
+            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium ${getScoreColor(percentScore)}`}>
+              <span>{percentScore}</span>
               <span className="text-xs opacity-75">/100</span>
             </div>
           </div>
