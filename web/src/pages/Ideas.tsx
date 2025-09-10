@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react"
 import PageHeader from "@/components/system/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import NewIdeaForm from "@/components/ideas/NewIdeaForm"
+import type { NewIdeaPayload } from "@/components/ideas/NewIdeaForm"
 import { IdeaCard } from "@/components/ideas/IdeaCard"
 import { toast } from "sonner"
 import * as api from "@/lib/api"
@@ -48,38 +48,8 @@ export default function Ideas() {
 
   // ----- Create dialog state -----
   const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    scalability: 3,
-    ease_to_build: 3,
-    uses_ai: false,
-    ai_complexity: 0,
-  })
 
-  async function onCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.title.trim() || !form.description.trim()) {
-      toast.error("Please fill in title and description")
-      return
-    }
-    const t = toast.loading("Creating idea…")
-    const res = await api.ideas.create({
-      ...form,
-      ai_complexity: form.uses_ai ? form.ai_complexity : 0,
-    })
-    toast.dismiss(t)
-    if (!res.ok) {
-      toast.error("Could not create idea", { description: res.error.message })
-      return
-    }
-    toast.success("Idea created")
-    setOpen(false)
-    setForm({ title: "", description: "", scalability: 3, ease_to_build: 3, uses_ai: false, ai_complexity: 0 })
-    // reload first page so the new one is visible quickly
-    setOffset(0)
-    load()
-  }
+  // creation now handled by NewIdeaForm
 
   async function onDelete(id: string) {
     const t = toast.loading("Deleting…")
@@ -118,75 +88,21 @@ export default function Ideas() {
                   <DialogTitle>New Idea</DialogTitle>
                   <DialogDescription>Keep it simple—add more fields later.</DialogDescription>
                 </DialogHeader>
-
-                <form onSubmit={onCreate} className="space-y-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" value={form.title} onChange={e => setForm(v => ({ ...v, title: e.target.value }))} required />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="desc">Description</Label>
-                    <Textarea id="desc" value={form.description} onChange={e => setForm(v => ({ ...v, description: e.target.value }))} required />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="scal">Scalability (1–5)</Label>
-                      <Input
-                        id="scal"
-                        type="number"
-                        min={1}
-                        max={5}
-                        value={form.scalability}
-                        onChange={e => setForm(v => ({ ...v, scalability: Number(e.target.value) }))}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="ease">Ease to build (1–5)</Label>
-                      <Input
-                        id="ease"
-                        type="number"
-                        min={1}
-                        max={5}
-                        value={form.ease_to_build}
-                        onChange={e => setForm(v => ({ ...v, ease_to_build: Number(e.target.value) }))}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={form.uses_ai}
-                        onChange={e => setForm(v => ({ ...v, uses_ai: e.target.checked, ai_complexity: e.target.checked ? v.ai_complexity : 0 }))}
-                      />
-                      <span>Uses AI</span>
-                    </label>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="ai">AI Complexity (0–5)</Label>
-                      <Input
-                        id="ai"
-                        type="number"
-                        min={0}
-                        max={5}
-                        value={form.ai_complexity}
-                        onChange={e => setForm(v => ({ ...v, ai_complexity: Number(e.target.value) }))}
-                        disabled={!form.uses_ai}
-                        aria-disabled={!form.uses_ai}
-                      />
-                    </div>
-                  </div>
-
-                  <DialogFooter>
-                    <Button variant="outline" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button type="submit">Create</Button>
-                  </DialogFooter>
-                </form>
+                <NewIdeaForm
+                  onCreate={async (p: NewIdeaPayload) => {
+                    const res = await api.ideas.create({
+                      ...p,
+                      ai_complexity: p.uses_ai ? p.ai_complexity : 0,
+                    })
+                    if (res.ok) {
+                      setOpen(false)
+                      setOffset(0)
+                      load()
+                    }
+                    return res.ok ? { ok: true } : { ok: false, error: res.error }
+                  }}
+                  onCancel={() => setOpen(false)}
+                />
               </DialogContent>
             </Dialog>
           </>
