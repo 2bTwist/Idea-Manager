@@ -26,9 +26,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // In bearer mode, only try if a token exists.
       if (AUTH_MODE === "cookie" || getToken()) {
         try {
-          console.log("AuthProvider: checking /auth/me (boot)")
+          if (import.meta.env.DEV) console.log("AuthProvider: checking /auth/me (boot)")
           const me = await api.auth.me()
-          console.log("AuthProvider: /auth/me (boot) result:", me)
+          if (import.meta.env.DEV) console.log("AuthProvider: /auth/me (boot) result:", me)
           if (me.ok) setUser(me.data)
           else setUser(null)
         } catch (e) {
@@ -41,9 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   async function login(email: string, password: string) {
-    console.log("AuthProvider: login attempt for", email)
+  if (import.meta.env.DEV) console.log("AuthProvider: login attempt for", email)
     const res = await api.auth.login(email, password)
-    console.log("AuthProvider: login response:", res)
+  if (import.meta.env.DEV) console.log("AuthProvider: login response:", res)
     if (!res.ok) {
       console.error("AuthProvider: login failed:", res.error)
       // prefer nested message if present
@@ -55,9 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (AUTH_MODE === "bearer") setToken(res.data.access_token)
 
     try {
-      console.log("AuthProvider: fetching /auth/me after login")
-      const me = await api.auth.me()
-      console.log("AuthProvider: /auth/me after login result:", me)
+  if (import.meta.env.DEV) console.log("AuthProvider: fetching /auth/me after login")
+  const me = await api.auth.me()
+  if (import.meta.env.DEV) console.log("AuthProvider: /auth/me after login result:", me)
       if (!me.ok) {
         if (AUTH_MODE === "bearer") clearToken()
         console.error("AuthProvider: /auth/me returned error:", me.error)

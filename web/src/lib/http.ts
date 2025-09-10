@@ -107,6 +107,24 @@ export const http = {
     request<T>(p, { ...o, method: "PUT", body }),
   patch:<T>(p: string, body?: unknown, o?: Omit<Parameters<typeof request<T>>[1], "method">) =>
     request<T>(p, { ...o, method: "PATCH", body }),
-  del:  <T>(p: string, o?: Omit<Parameters<typeof request<T>>[1], "method" | "body">) =>
-    request<T>(p, { ...o, method: "DELETE" }),
+  // Overload: allow DELETE with or without a body
+  del: <T>(p: string, bodyOrOpts?: unknown | Omit<Parameters<typeof request<T>>[1], "method" | "body">, maybeOpts?: Omit<Parameters<typeof request<T>>[1], "method">) => {
+    const isObj = bodyOrOpts !== null && typeof bodyOrOpts === "object"
+  const looksLikeOpts = isObj && ("method" in (bodyOrOpts as any) || "headers" in (bodyOrOpts as any) || "auth" in (bodyOrOpts as any) || "timeoutMs" in (bodyOrOpts as any))
+    const looksLikeOptsWithBody = isObj && ("body" in (bodyOrOpts as any))
+    let body: any = undefined
+    let opts: any = undefined
+    if (maybeOpts !== undefined) {
+      // call form: del(p, body, opts)
+      body = bodyOrOpts
+      opts = maybeOpts
+    } else if (isObj && (looksLikeOpts || looksLikeOptsWithBody)) {
+      // call form: del(p, opts)  (opts may include body property)
+      opts = bodyOrOpts
+    } else {
+      // call form: del(p, body)
+      body = bodyOrOpts
+    }
+    return request<T>(p, { ...(opts as any), method: "DELETE", body })
+  },
 }

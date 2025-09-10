@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { DialogClose } from "@/components/ui/dialog"
 import * as api from "@/lib/api"
 import Switch from "@/components/ui/switch"
 import TagPill from "@/components/ui/tag-pill"
@@ -201,7 +202,9 @@ export default function NewIdeaForm({
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button variant="outline" type="button" onClick={() => { onCancel?.(); }} disabled={loading}>Cancel</Button>
+        <DialogClose asChild>
+          <Button variant="outline" type="button" onClick={() => { onCancel?.(); }} disabled={loading}>Cancel</Button>
+        </DialogClose>
         <Button type="submit" disabled={loading}>{loading ? "Saving…" : "Save Idea"}</Button>
       </div>
     </form>
