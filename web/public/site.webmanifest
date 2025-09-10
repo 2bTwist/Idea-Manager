@@ -1,0 +1,15 @@
+{
+  "name": "Idea Manager",
+  "short_name": "Ideas",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0ea5a4",
+  "background_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/fancy-icon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}

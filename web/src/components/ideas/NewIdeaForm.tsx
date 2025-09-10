@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import * as api from "@/lib/api"
+import Switch from "@/components/ui/switch"
+import TagPill from "@/components/ui/tag-pill"
 
 export type NewIdeaPayload = {
   title: string
@@ -126,15 +128,11 @@ export default function NewIdeaForm({
           <div className="text-sm font-medium">Uses AI Technology</div>
           <div className="text-xs text-muted-foreground">Enable AI-specific scoring and complexity</div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={form.uses_ai}
-          onClick={() => setForm(v => ({ ...v, uses_ai: !v.uses_ai, ai_complexity: v.uses_ai ? 0 : v.ai_complexity }))}
-          className={`w-12 h-7 rounded-full p-1 transition-colors ${form.uses_ai ? 'bg-primary' : 'bg-muted/30'}`}
-        >
-          <span className={`block w-5 h-5 bg-white rounded-full shadow transform transition-transform ${form.uses_ai ? 'translate-x-5' : 'translate-x-0'}`} />
-        </button>
+        <Switch
+          checked={form.uses_ai}
+          onChange={v => setForm(s => ({ ...s, uses_ai: v, ai_complexity: v ? s.ai_complexity : 0 }))}
+          ariaLabel="Toggle Uses AI"
+        />
       </div>
 
       {form.uses_ai && (
@@ -160,22 +158,12 @@ export default function NewIdeaForm({
           {availableTags.map(t => {
             const selected = form.tags?.includes(t)
             return (
-              <button
+              <TagPill
                 key={t}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => {
-                  setForm(v => ({ ...v, tags: selected ? v.tags?.filter(x => x !== t) : [...(v.tags || []), t] }))
-                }}
-                className={
-                  `px-3 py-1 rounded-full text-sm transition-all duration-150 border focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary ` +
-                  (selected
-                    ? 'bg-white text-black dark:bg-slate-700 dark:text-white border-transparent shadow-sm'
-                    : 'bg-transparent text-muted-foreground border-border hover:bg-border/50')
-                }
-              >
-                {t}
-              </button>
+                label={t}
+                selected={!!selected}
+                onToggle={() => setForm(v => ({ ...v, tags: selected ? v.tags?.filter(x => x !== t) : [...(v.tags || []), t] }))}
+              />
             )
           })}
         </div>

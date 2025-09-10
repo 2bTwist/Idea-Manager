@@ -13,8 +13,8 @@ function Brand() {
   const { isAuthed } = useAuth()
   return (
     <NavLink to={isAuthed ? "/ideas" : "/"} className="flex items-center gap-2">
-      <div className="size-7 rounded-md bg-primary text-primary-foreground grid place-items-center shadow-xs">
-        <span className="text-sm">⚙️</span>
+      <div className="size-8 rounded-md grid place-items-center">
+        <img src="/fancy-icon.svg" alt="Idea Manager" className="w-8 h-8" />
       </div>
       <span className="font-semibold tracking-tight">Idea Manager</span>
     </NavLink>
