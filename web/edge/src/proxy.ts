@@ -6,7 +6,7 @@ function parseAllowed(origins: string | undefined) {
 }
 
 export default {
-  async fetch(req: Request, env: Env, ctx: any): Promise<Response> {
+  async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
     const apiOrigin = (env.API_ORIGIN as string) || "https://api.eddyb.dev"
     const allowed = new Set(parseAllowed(env.ALLOWED_ORIGINS as string))

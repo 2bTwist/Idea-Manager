@@ -1,6 +1,6 @@
 name = "ideas-api-proxy"
 main = "src/proxy.ts"
-compatibility_date = "2024-12-01"
+compatibility_date = "2025-04-02"
 
 # Deploy to your workers.dev subdomain first (we'll bind a custom route later)
 workers_dev = true
@@ -9,3 +9,7 @@ workers_dev = true
 [vars]
 API_ORIGIN = "https://api.eddyb.dev"
 ALLOWED_ORIGINS = "http://localhost:5173,https://app.eddyb.dev"
+
+routes = [
+  { pattern = "app.eddyb.dev/api/*", zone_name = "eddyb.dev" }
+]
