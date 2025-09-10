@@ -2,7 +2,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { Idea } from "@/lib/api"
-import { Sparkles, Trash2, MoreHorizontal } from "lucide-react"
+import { Sparkles, Trash2, PencilIcon } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import NewIdeaForm from "@/components/ideas/NewIdeaForm"
+import * as api from "@/lib/api"
 
 function Bar({ value, max = 10 }: { value: number; max?: number }) {
   const pct = Math.max(0, Math.min(100, Math.round((value / max) * 100)))
@@ -54,9 +57,48 @@ export function IdeaCard({
         <div className="mb-1">
           <div className="flex items-center justify-between min-h-[3rem]">
             <CardTitle className="text-lg md:text-[1.15rem] font-semibold flex-1 pr-3">{idea.title}</CardTitle>
-            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-              <MoreHorizontal className="size-4" />
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <PencilIcon className="size-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Idea</DialogTitle>
+                </DialogHeader>
+                <NewIdeaForm
+                  initial={{
+                    title: idea.title,
+                    description: idea.description,
+                    scalability: idea.scalability,
+                    ease_to_build: idea.ease_to_build,
+                    uses_ai: idea.uses_ai,
+                    ai_complexity: idea.ai_complexity,
+                    tags: idea.tags ?? [],
+                  }}
+                  onCreate={async (p) => {
+                    // call PATCH
+                    const res = await api.ideas.update(idea.id, {
+                      title: p.title,
+                      description: p.description,
+                      scalability: p.scalability,
+                      ease_to_build: p.ease_to_build,
+                      uses_ai: p.uses_ai,
+                      ai_complexity: p.uses_ai ? p.ai_complexity : 0,
+                      tags: p.tags,
+                    })
+                    if (res.ok) {
+                      // refresh the page by reloading window or emit an event; simple approach:
+                      window.location.reload()
+                      return { ok: true }
+                    }
+                    return { ok: false, error: res.error }
+                  }}
+                  onCancel={() => { /* dialog will close automatically via Dialog */ }}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 

@@ -21,20 +21,37 @@ export default function NewIdeaForm({
   onCreate,
   onSuccess,
   onCancel,
+  initial,
 }: {
   onCreate: (p: NewIdeaPayload) => Promise<{ ok: boolean; error?: any }>
   onSuccess?: () => void
   onCancel?: () => void
+  initial?: Partial<NewIdeaPayload>
 }) {
   const [form, setForm] = useState<NewIdeaPayload>({
-    title: "",
-    description: "",
-    scalability: 3,
-    ease_to_build: 3,
-    uses_ai: false,
-    ai_complexity: 0,
-    tags: [],
+    title: initial?.title ?? "",
+    description: initial?.description ?? "",
+    scalability: initial?.scalability ?? 3,
+    ease_to_build: initial?.ease_to_build ?? 3,
+    uses_ai: initial?.uses_ai ?? false,
+    ai_complexity: initial?.ai_complexity ?? 0,
+    tags: initial?.tags ?? [],
   })
+
+  useEffect(() => {
+    if (initial) {
+      setForm(f => ({
+        ...f,
+        title: initial.title ?? f.title,
+        description: initial.description ?? f.description,
+        scalability: initial.scalability ?? f.scalability,
+        ease_to_build: initial.ease_to_build ?? f.ease_to_build,
+        uses_ai: initial.uses_ai ?? f.uses_ai,
+        ai_complexity: initial.ai_complexity ?? f.ai_complexity,
+        tags: initial.tags ?? f.tags,
+      }))
+    }
+  }, [initial])
   const [loading, setLoading] = useState(false)
   const [availableTags, setAvailableTags] = useState<string[]>([])
 
@@ -90,7 +107,13 @@ export default function NewIdeaForm({
 
       <div className="space-y-1">
         <Label htmlFor="desc">Description</Label>
-        <Textarea id="desc" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} required />
+        <Textarea
+          id="desc"
+          value={form.description}
+          onChange={e => setForm({ ...form, description: e.target.value })}
+          placeholder="Enter a simple summary description of the idea"
+          required
+        />
       </div>
 
       <div className="space-y-2">
