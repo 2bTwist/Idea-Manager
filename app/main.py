@@ -1,4 +1,5 @@
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 import socket
@@ -53,6 +54,8 @@ def create_app() -> FastAPI:
         redoc_url=redoc_url,
         openapi_url=openapi_url,
     )
+
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
     # Rate limiting: limiter state + middleware + default handler
     app.state.limiter = limiter

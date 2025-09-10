@@ -23,9 +23,10 @@ export default {
 
     // Rewrite /api/xyz -> <API_ORIGIN>/xyz
     const upstream = new URL(url.toString())
-    upstream.hostname = new URL(apiOrigin).hostname
-    upstream.protocol = new URL(apiOrigin).protocol
-    upstream.port = new URL(apiOrigin).port
+    const api = new URL(apiOrigin)
+    upstream.hostname = api.hostname
+    upstream.protocol = api.protocol
+    upstream.port = api.port
     upstream.pathname = url.pathname.replace(/^\/api/, "")
 
     // Copy headers (excluding hop-by-hop)
@@ -33,31 +34,55 @@ export default {
     const hopByHopHeaders = ["host", "cf-connecting-ip", "x-forwarded-host", "x-real-ip"]
     hopByHopHeaders.forEach(h => headers.delete(h))
 
+    // Tell the API the real outer scheme/host so it generates HTTPS absolute redirects
+    headers.set("x-forwarded-proto", "https")
+    headers.set("x-forwarded-host", api.host)
+
     // Forward the request with body & cookies
     const init: RequestInit = {
       method: req.method,
       headers,
       body: ["GET", "HEAD"].includes(req.method) ? undefined : await req.arrayBuffer(),
+      // we’ll rewrite Location headers, so don't auto-follow
       redirect: "manual",
     }
 
     let res: Response
     try {
       res = await fetch(upstream.toString(), init)
-    } catch (e) {
+    } catch {
       return corsResponse(new Response(JSON.stringify({ error: "Upstream not reachable" }), {
         status: 502, headers: { "content-type": "application/json" }
       }), req, allowed)
     }
 
-    // Pass through body & headers, but apply CORS
+    // Pass through body & headers, but apply CORS and clean Set-Cookie
     const outHeaders = new Headers(res.headers)
-    // Ensure Set-Cookie passes through (don’t coalesce)
     const setCookies = res.headers.getSetCookie?.() ?? []
     outHeaders.delete("set-cookie")
+
+    // If upstream sent a redirect, normalize the Location to stay on the current origin under /api/*
+    if ([301, 302, 303, 307, 308].includes(res.status)) {
+      const loc = outHeaders.get("location")
+      if (loc) {
+        try {
+          const locUrl = new URL(loc, upstream) // handle relative too
+          // Build a new URL on the requester’s origin (the Pages app)
+          const reqUrl = new URL(req.url)
+          const newPath = locUrl.pathname.startsWith("/api/")
+            ? locUrl.pathname
+            : "/api" + locUrl.pathname
+          const rewritten = new URL(reqUrl.origin + newPath + locUrl.search + locUrl.hash)
+          outHeaders.set("location", rewritten.toString())
+        } catch {
+          // if it's malformed, drop it to avoid mixed-content
+          outHeaders.delete("location")
+        }
+      }
+    }
+
     const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: outHeaders })
     setCookies.forEach(c => out.headers.append("set-cookie", c))
-
     return corsResponse(out, req, allowed)
   }
 }
