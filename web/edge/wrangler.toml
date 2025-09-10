@@ -8,7 +8,7 @@ workers_dev = true
 # You can also set these as real secrets/vars in Cloudflare later; fine as defaults here
 [vars]
 API_ORIGIN = "https://api.eddyb.dev"
-ALLOWED_ORIGINS = "http://localhost:5173,https://app.eddyb.dev"
+ALLOWED_ORIGINS="https://app.eddyb.dev,https://idea-manager.pages.dev"
 
 routes = [
   { pattern = "app.eddyb.dev/api/*", zone_name = "eddyb.dev" }
