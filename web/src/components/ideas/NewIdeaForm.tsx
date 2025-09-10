@@ -100,108 +100,115 @@ export default function NewIdeaForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <div className="space-y-1">
-        <Label htmlFor="title">Idea Title</Label>
-        <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
-      </div>
-
-      <div className="space-y-1">
-        <Label htmlFor="desc">Description</Label>
-        <Textarea
-          id="desc"
-          value={form.description}
-          onChange={e => setForm({ ...form, description: e.target.value })}
-          placeholder="Enter a simple summary description of the idea"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Scalability (1–5)</Label>
-          <div className="text-sm">{form.scalability}/5</div>
+    <form onSubmit={submit} className="flex flex-col w-full h-[min(90vh,800px)]">
+      {/* scrollable content area */}
+      <div className="overflow-y-auto px-2 py-3 space-y-3">
+        <div className="space-y-1">
+          <Label htmlFor="title">Idea Title</Label>
+          <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
         </div>
-        <input
-          type="range"
-          min={1}
-          max={5}
-          value={form.scalability}
-          onChange={e => setForm({ ...form, scalability: Number(e.target.value) })}
-          className="w-full"
-        />
-      </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Ease of Build (1–5)</Label>
-          <div className="text-sm">{form.ease_to_build}/5</div>
+        <div className="space-y-1">
+          <Label htmlFor="desc">Description</Label>
+          <Textarea
+            id="desc"
+            value={form.description}
+            onChange={e => setForm({ ...form, description: e.target.value })}
+            placeholder="Enter a simple summary description of the idea"
+            required
+          />
         </div>
-        <input
-          type="range"
-          min={1}
-          max={5}
-          value={form.ease_to_build}
-          onChange={e => setForm({ ...form, ease_to_build: Number(e.target.value) })}
-          className="w-full"
-        />
-      </div>
 
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <div className="text-sm font-medium">Uses AI Technology</div>
-          <div className="text-xs text-muted-foreground">Enable AI-specific scoring and complexity</div>
-        </div>
-        <Switch
-          checked={form.uses_ai}
-          onChange={v => setForm(s => ({ ...s, uses_ai: v, ai_complexity: v ? s.ai_complexity : 0 }))}
-          ariaLabel="Toggle Uses AI"
-        />
-      </div>
-
-      {form.uses_ai && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label>AI Complexity (0–5)</Label>
-            <div className="text-sm">{form.ai_complexity}/5</div>
+            <Label>Scalability (1–5)</Label>
+            <div className="text-sm">{form.scalability}/5</div>
           </div>
           <input
             type="range"
-            min={0}
+            min={1}
             max={5}
-            value={form.ai_complexity}
-            onChange={e => setForm({ ...form, ai_complexity: Number(e.target.value) })}
-            className="w-full accent-primary"
+            value={form.scalability}
+            onChange={e => setForm({ ...form, scalability: Number(e.target.value) })}
+            className="w-full"
+            aria-label="Scalability"
           />
         </div>
-      )}
 
-      <div className="space-y-1">
-        <Label>Tags</Label>
-        <div className="flex gap-2 flex-wrap">
-          {availableTags.map(t => {
-            const selected = form.tags?.includes(t)
-            return (
-              <TagPill
-                key={t}
-                label={t}
-                selected={!!selected}
-                onToggle={() => setForm(v => ({ ...v, tags: selected ? v.tags?.filter(x => x !== t) : [...(v.tags || []), t] }))}
-              />
-            )
-          })}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Ease of Build (1–5)</Label>
+            <div className="text-sm">{form.ease_to_build}/5</div>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={5}
+            value={form.ease_to_build}
+            onChange={e => setForm({ ...form, ease_to_build: Number(e.target.value) })}
+            className="w-full"
+            aria-label="Ease to build"
+          />
+        </div>
+
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <div className="text-sm font-medium">Uses AI Technology</div>
+            <div className="text-xs text-muted-foreground">Enable AI-specific scoring and complexity</div>
+          </div>
+          <Switch
+            checked={form.uses_ai}
+            onChange={v => setForm(s => ({ ...s, uses_ai: v, ai_complexity: v ? s.ai_complexity : 0 }))}
+            ariaLabel="Toggle Uses AI"
+          />
+        </div>
+
+        {form.uses_ai && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>AI Complexity (0–5)</Label>
+              <div className="text-sm">{form.ai_complexity}/5</div>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={5}
+              value={form.ai_complexity}
+              onChange={e => setForm({ ...form, ai_complexity: Number(e.target.value) })}
+              className="w-full accent-primary"
+              aria-label="AI complexity"
+            />
+          </div>
+        )}
+
+        <div className="space-y-1">
+          <Label>Tags</Label>
+          <div className="flex gap-2 flex-wrap">
+            {availableTags.map(t => {
+              const selected = form.tags?.includes(t)
+              return (
+                <TagPill
+                  key={t}
+                  label={t}
+                  selected={!!selected}
+                  onToggle={() => setForm(v => ({ ...v, tags: selected ? v.tags?.filter(x => x !== t) : [...(v.tags || []), t] }))}
+                />
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <div className="text-sm text-muted-foreground">Calculated Score</div>
+          <div className="mt-1 inline-flex items-center gap-3 px-3 py-2 rounded-md bg-muted w-full justify-between">
+            <div className="text-sm">Based on scalability, feasibility, and AI</div>
+            <div className="text-lg font-medium">{calcScorePercent(form)}/100</div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-3">
-        <div className="text-sm text-muted-foreground">Calculated Score</div>
-        <div className="mt-1 inline-flex items-center gap-3 px-3 py-2 rounded-md bg-muted w-full justify-between">
-          <div className="text-sm">Based on scalability, feasibility, and AI</div>
-          <div className="text-lg font-medium">{calcScorePercent(form)}/100</div>
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2">
+      {/* sticky action bar */}
+      <div className="flex-shrink-0 sticky bottom-0 bg-background/50 backdrop-blur-sm p-3 flex justify-end gap-2 border-t border-muted/10">
         <DialogClose asChild>
           <Button variant="outline" type="button" onClick={() => { onCancel?.(); }} disabled={loading}>Cancel</Button>
         </DialogClose>
