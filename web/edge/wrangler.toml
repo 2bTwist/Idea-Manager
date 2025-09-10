@@ -1,0 +1,11 @@
+name = "ideas-api-proxy"
+main = "src/proxy.ts"
+compatibility_date = "2024-12-01"
+
+# Deploy to your workers.dev subdomain first (we'll bind a custom route later)
+workers_dev = true
+
+# You can also set these as real secrets/vars in Cloudflare later; fine as defaults here
+[vars]
+API_ORIGIN = "https://api.eddyb.dev"
+ALLOWED_ORIGINS = "http://localhost:5173,https://app.eddyb.dev"
