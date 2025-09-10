@@ -12,6 +12,9 @@ from app.services.users import (
     get_by_email, create_user, authenticate, set_user_password, update_profile,
     change_password, create_password_reset_token, reset_password_with_token,
     issue_email_verification, verify_email_with_token)
+from sqlalchemy import select
+from datetime import datetime, timezone
+from app.models.email_verification import EmailVerificationToken
 from app.core.security import create_access_token, verify_password
 from app.core.tokens import hash_token
 from app.core.config import settings
@@ -52,9 +55,34 @@ async def request_verify(payload: RequestVerifyIn, db: AsyncSession = Depends(ge
 
 @router.post("/verify-email", response_model=VerifyEmailOut)
 async def verify_email_post(payload: VerifyEmailIn, db: AsyncSession = Depends(get_db)):
-    ok = await verify_email_with_token(db, payload.token)
-    if not ok:
+    # Ensure the token exists, is unused and not expired
+    hashed = hash_token(payload.token)
+    now = datetime.now(timezone.utc)
+    res = await db.execute(
+        select(EmailVerificationToken).where(
+            EmailVerificationToken.token_hash == hashed,
+            EmailVerificationToken.used_at.is_(None),
+            EmailVerificationToken.expires_at > now,
+        )
+    )
+    evt = res.scalar_one_or_none()
+    if not evt:
         raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+    # fetch the user and confirm the provided email matches the token owner
+    user_res = await db.execute(select(User).where(User.id == evt.user_id))
+    user = user_res.scalar_one_or_none()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+    if user.email.lower().strip() != payload.email.lower().strip():
+        # Avoid leaking which part failed; return a generic verification failure
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+    # mark verified
+    user.is_verified = True
+    evt.used_at = now
+    await db.commit()
     return VerifyEmailOut(message="Email verified. You can sign in now.")
 
 @router.post("/token", response_model=Token)

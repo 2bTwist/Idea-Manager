@@ -26,14 +26,19 @@ export default function Ideas() {
 
   async function load() {
     setLoading(true)
-    const res = await api.ideas.list({ limit, offset, q, sort: "created_at", order: "desc" })
-    setLoading(false)
-    if (!res.ok) {
-      toast.error("Failed to load ideas", { description: res.error.message })
-      return
+    try {
+      const res = await api.ideas.list({ limit, offset, q, sort: "created_at", order: "desc" })
+      if (!res.ok) {
+        toast.error("Failed to load ideas", { description: res.error.message })
+        return
+      }
+      setItems(res.data.items)
+      setTotal(res.data.total)
+    } catch (err: any) {
+      toast.error("Network error", { description: err?.message ?? "Please try again." })
+    } finally {
+      setLoading(false)
     }
-    setItems(res.data.items)
-    setTotal(res.data.total)
   }
 
   useEffect(() => {

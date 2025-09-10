@@ -1,7 +1,6 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-// ...existing imports
 import type { Idea } from "@/lib/api"
 import { Sparkles, Trash2, MoreHorizontal } from "lucide-react"
 
