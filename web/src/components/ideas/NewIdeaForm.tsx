@@ -100,9 +100,9 @@ export default function NewIdeaForm({
   }
 
   return (
-    <form onSubmit={submit} className="w-full h-full flex flex-col">
+    <form onSubmit={submit} className="w-full h-full flex flex-col min-h-0">
       {/* scrollable content area */}
-  <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-3" style={{ WebkitOverflowScrolling: "touch" }}>
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-3">
         <div className="space-y-1">
           <Label htmlFor="title">Idea Title</Label>
           <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
