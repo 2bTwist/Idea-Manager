@@ -32,10 +32,13 @@ function DialogContent({
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
+        // enable smooth touch scrolling on iOS
+        style={{ WebkitOverflowScrolling: "touch" }}
         className={cn(
           // Mobile-first: full-screen dialog so content can scroll naturally on small devices
-          "fixed inset-0 z-50 grid w-full h-full gap-2 bg-card p-4 text-card-foreground shadow-xl",
-          // On small+ screens, constrain to a centered modal with rounded corners
+          // use flex column so inner children can use flex-1 for scrolling
+          "fixed inset-0 z-50 flex flex-col w-full h-full gap-2 bg-card p-4 text-card-foreground shadow-xl overflow-auto",
+          // On small+ screens, constrain to a centered modal with rounded corners and hide outer overflow
           "sm:inset-auto sm:w-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-xl sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:overflow-hidden sm:p-6",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           className
