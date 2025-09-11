@@ -100,9 +100,9 @@ export default function NewIdeaForm({
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col w-full h-[min(90vh,800px)]">
+    <form onSubmit={submit} className="w-full h-full flex flex-col">
       {/* scrollable content area */}
-      <div className="overflow-y-auto px-2 py-3 space-y-3">
+      <div className="flex-1 overflow-y-auto px-2 py-3 space-y-3">
         <div className="space-y-1">
           <Label htmlFor="title">Idea Title</Label>
           <Input id="title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
@@ -207,8 +207,8 @@ export default function NewIdeaForm({
         </div>
       </div>
 
-      {/* sticky action bar */}
-      <div className="flex-shrink-0 sticky bottom-0 bg-background/50 backdrop-blur-sm p-3 flex justify-end gap-2 border-t border-muted/10">
+  {/* footer actions - kept outside scroll area so always visible */}
+  <div className="flex-none mt-3 pt-3 border-t border-muted/10 bg-transparent flex justify-end gap-2">
         <DialogClose asChild>
           <Button variant="outline" type="button" onClick={() => { onCancel?.(); }} disabled={loading}>Cancel</Button>
         </DialogClose>

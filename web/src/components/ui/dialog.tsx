@@ -34,6 +34,8 @@ function DialogContent({
       <DialogPrimitive.Content
         className={cn(
           "fixed z-50 grid w-full max-w-lg gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-xl",
+          // constrain height and let inner content scroll if necessary
+          "max-h-[90vh] overflow-hidden",
           "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           className
