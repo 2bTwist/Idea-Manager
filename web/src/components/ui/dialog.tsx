@@ -33,10 +33,13 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "fixed z-50 grid w-full max-w-lg gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-xl",
-          // constrain height and let inner content scroll if necessary
-          "max-h-[90vh] overflow-hidden",
-          "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+          "fixed z-50 grid w-full gap-4 bg-card p-4 sm:p-6 text-card-foreground shadow-xl border",
+          // small screens: full-bleed modal (inset 0) so it fits and can scroll; on sm+ center it
+          "top-0 left-0 right-0 bottom-0 sm:left-1/2 sm:top-1/2 sm:right-auto sm:bottom-auto sm:-translate-x-1/2 sm:-translate-y-1/2",
+          // size & radius
+          "sm:max-w-lg sm:max-h-[90vh] max-h-full sm:rounded-xl rounded-none",
+          // clipping - inner content scrolls
+          "overflow-hidden",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           className
         )}
