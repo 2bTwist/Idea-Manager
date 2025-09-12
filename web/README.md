@@ -49,7 +49,17 @@ Awesome—here’s a clear, end-to-end roadmap from where we are now.
 
    * Modal or page form (title, description, tags, priority).
    * Optimistic create/update; validation messages.
+
+3.1. Automatic AI feeder,
+
+3.2 AI can get your list of ideas in a page and pre create and add the ideas
+
+3.3 Transcribe
+
 4. Idea detail
+- Checklist for mini ideas in the idea
+
+5. 
 
    * Read view + inline edit; history sidebar (later), comments (later).
 5. Bulk actions (multi-select delete/move), keyboard nav (basic).
